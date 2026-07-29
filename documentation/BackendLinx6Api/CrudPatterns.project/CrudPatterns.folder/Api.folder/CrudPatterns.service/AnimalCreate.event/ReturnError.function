@@ -1,0 +1,31 @@
+{
+  "Properties": [
+    {
+      "Id": "Value",
+      "Type": "Generated:C_lzVV.Operations.AnimalCreate.Result?",
+      "ValueUsage": "RuntimeRead",
+      "Value": {
+        "ParsedExpression": "{\"HttpContext\":{\"StatusCode\":500, \"Headers\":[{\"Name\":\"content-type\", \"Value\":[\"application/json\"]}]}, \"Response200\":{}, \"Response500\":{\"Id\":0, \"MessageType\":\"Error\", \"Messages\":[{\"LinxExpression\":\"[PARSED]\"}]}, \"ResponseXXX\":\"\"}",
+        "ExpressionPlaceholders": [
+          {
+            "typePath": [
+              "Response500",
+              "Messages",
+              "[]"
+            ],
+            "expression": {
+              "Expression": "TryCatch.Catch.ErrorMessage",
+              "CompiledExpression": "={0}",
+              "Type": "Compiled:String?"
+            }
+          }
+        ]
+      },
+      "ValueType": "Linx.JsonExpression?"
+    }
+  ],
+  "RuntimeCharacteristics": {
+    "IsTerminating": true,
+    "ExecutionPathExecution": "ZeroOrMore"
+  }
+}

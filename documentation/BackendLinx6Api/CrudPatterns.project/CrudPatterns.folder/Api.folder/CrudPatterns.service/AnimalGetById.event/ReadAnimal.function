@@ -1,0 +1,117 @@
+{
+  "Properties": [
+    {
+      "Id": "Connection string",
+      "Type": "Compiled:String?",
+      "ValueUsage": "RuntimeRead",
+      "Value": {
+        "Expression": "$.Settings.DatabaseConnection",
+        "CompiledExpression": "={0}",
+        "Type": "Compiled:String?"
+      },
+      "ValueType": "Linx.CSharpExpression?"
+    },
+    {
+      "Id": "Connection type",
+      "Type": "Compiled:Twenty57.Linx.Plugins.Database.Shared.Common.Sql.DesignerConnectionType, Twenty57.Linx.Plugins.Database.Shared?",
+      "ValueUsage": "DesignTime",
+      "Value": "SqlServer"
+    },
+    {
+      "Id": "Expression0",
+      "Type": "Compiled:Object?",
+      "ValueUsage": "RuntimeRead",
+      "Value": {
+        "Expression": "$.Parameters.Id",
+        "CompiledExpression": "={0}",
+        "Type": "Compiled:Int32"
+      },
+      "ValueType": "Linx.CSharpExpression?"
+    },
+    {
+      "Id": "Result type",
+      "Type": "Compiled:Twenty57.Linx.Plugins.Database.Shared.ExecuteSQL.ResultType, Twenty57.Linx.Plugins.Database.Shared?",
+      "ValueUsage": "DesignTime",
+      "Value": {
+        "CustomType": null,
+        "Fields": [
+          {
+            "ColumnName": "Id",
+            "Name": "Id",
+            "ColumnType": "Int32",
+            "TypeReference": "Compiled:Int64"
+          },
+          {
+            "ColumnName": "Name",
+            "Name": "Name",
+            "ColumnType": "String",
+            "TypeReference": "Compiled:String?"
+          },
+          {
+            "ColumnName": "Species",
+            "Name": "Species",
+            "ColumnType": "String",
+            "TypeReference": "Compiled:String?"
+          },
+          {
+            "ColumnName": "Age",
+            "Name": "Age",
+            "ColumnType": "Int32",
+            "TypeReference": "Compiled:Int64"
+          },
+          {
+            "ColumnName": "HabitatId",
+            "Name": "HabitatId",
+            "ColumnType": "Int32",
+            "TypeReference": "Compiled:Int64"
+          },
+          {
+            "ColumnName": "HabitatName",
+            "Name": "HabitatName",
+            "ColumnType": "String",
+            "TypeReference": "Compiled:String?"
+          },
+          {
+            "ColumnName": "Diet",
+            "Name": "Diet",
+            "ColumnType": "String",
+            "TypeReference": "Compiled:String?"
+          },
+          {
+            "ColumnName": "LastChangedUser",
+            "Name": "LastChangedUser",
+            "ColumnType": "String",
+            "TypeReference": "Compiled:String?"
+          },
+          {
+            "ColumnName": "LastChangedDate",
+            "Name": "LastChangedDate",
+            "ColumnType": "String",
+            "TypeReference": "Compiled:String?"
+          }
+        ],
+        "IsCustomType": true
+      }
+    },
+    {
+      "Id": "Return options",
+      "Type": "Compiled:Twenty57.Linx.Plugins.Database.Shared.ExecuteSQL.ReturnModeType, Twenty57.Linx.Plugins.Database.Shared?",
+      "ValueUsage": "DesignTime",
+      "Value": "FirstRow"
+    },
+    {
+      "Id": "SQL",
+      "Type": "Compiled:String?",
+      "ValueUsage": "RuntimeRead",
+      "Value": "SELECT\r\n\tAnimal.Id,\r\n\tAnimal.[Name],\r\n\tAnimal.Species,\r\n\tAnimal.Age,\r\n\tAnimal.HabitatId,\r\n\tHabitat.[Name] AS HabitatName,\r\n\tAnimal.Diet,\r\n\tAnimal.LastChangedUser,\r\n\tFORMAT(Animal.LastChangedDate AT TIME ZONE 'UTC' AT TIME ZONE 'South Africa Standard Time', 'yyyy-MM-dd HH:mm:ss') AS LastChangedDate\r\n\r\nFROM\r\n\tAnimal\r\nINNER JOIN\r\n\tHabitat ON Habitat.Id = Animal.HabitatId\r\nWHERE\r\n\tAnimal.Id = @{$.Parameters.Id}"
+    },
+    {
+      "Id": "Timeout",
+      "Type": "Compiled:Int32",
+      "ValueUsage": "DesignTime",
+      "Value": 60
+    }
+  ],
+  "Result": "Generated:T_VFvm?",
+  "Version": "3"
+}

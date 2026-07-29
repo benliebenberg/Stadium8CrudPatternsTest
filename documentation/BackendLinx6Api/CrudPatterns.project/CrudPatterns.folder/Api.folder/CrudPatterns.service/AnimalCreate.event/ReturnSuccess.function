@@ -1,0 +1,30 @@
+{
+  "Properties": [
+    {
+      "Id": "Value",
+      "Type": "Generated:C_lzVV.Operations.AnimalCreate.Result?",
+      "ValueUsage": "RuntimeRead",
+      "Value": {
+        "ParsedExpression": "{\"HttpContext\":{}, \"Response200\":{\"Id\":{\"LinxExpression\":\"[PARSED]\"}, \"MessageType\":\"Success\", \"Messages\":[\"Animal successfully created\"]}}",
+        "ExpressionPlaceholders": [
+          {
+            "typePath": [
+              "Response200",
+              "Id"
+            ],
+            "expression": {
+              "Expression": "InsertAnimal.Id",
+              "CompiledExpression": "={0}",
+              "Type": "Compiled:Int64"
+            }
+          }
+        ]
+      },
+      "ValueType": "Linx.JsonExpression?"
+    }
+  ],
+  "RuntimeCharacteristics": {
+    "IsTerminating": true,
+    "ExecutionPathExecution": "ZeroOrMore"
+  }
+}

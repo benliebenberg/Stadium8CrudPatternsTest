@@ -1,0 +1,16 @@
+{
+  "Properties": [
+    {
+      "Id": "Service",
+      "Type": "Compiled:Linx.IServiceReference?",
+      "ValueUsage": "DesignTime",
+      "Value": {
+        "Id": "lzVV",
+        "Name": "CrudPatterns.CrudPatterns.Api.CrudPatterns",
+        "IsValid": true,
+        "QualifiedPath": "FL:CrudPatterns→FL:Api→SV:CrudPatterns"
+      },
+      "ValueType": "Linx.ServiceReference?"
+    }
+  ]
+}

@@ -1,0 +1,380 @@
+[
+  {
+    "Type": "Generated",
+    "Value": {
+      "Id": "C_lzVV.Operations.AnimalCreate.Result",
+      "Properties": [
+        {
+          "Id": "HttpContext",
+          "Name": "HttpContext",
+          "Type": "Compiled:Twenty57.Linx.Plugins.Rest.Shared.OpenAPIWebService.OpenAPI.Data.Out.HttpContext, Twenty57.Linx.Plugins.Rest.Shared?",
+          "Access": "ReadWrite"
+        },
+        {
+          "Id": "Response200",
+          "Name": "Response200",
+          "Type": "Generated:C_lzVV.Schema.DefaultResponse?",
+          "Access": "ReadWrite"
+        },
+        {
+          "Id": "Response500",
+          "Name": "Response500",
+          "Type": "Generated:C_lzVV.Schema.DefaultResponse?",
+          "Access": "ReadWrite"
+        },
+        {
+          "Id": "ResponseXXX",
+          "Name": "ResponseXXX",
+          "Type": "Compiled:Object?",
+          "Access": "ReadWrite"
+        }
+      ]
+    }
+  },
+  {
+    "Type": "Generated",
+    "Value": {
+      "Id": "C_lzVV.Operations.AnimalDelete.Result",
+      "Properties": [
+        {
+          "Id": "HttpContext",
+          "Name": "HttpContext",
+          "Type": "Compiled:Twenty57.Linx.Plugins.Rest.Shared.OpenAPIWebService.OpenAPI.Data.Out.HttpContext, Twenty57.Linx.Plugins.Rest.Shared?",
+          "Access": "ReadWrite"
+        },
+        {
+          "Id": "Response200",
+          "Name": "Response200",
+          "Type": "Generated:C_lzVV.Schema.DefaultResponse?",
+          "Access": "ReadWrite"
+        },
+        {
+          "Id": "Response500",
+          "Name": "Response500",
+          "Type": "Generated:C_lzVV.Schema.DefaultResponse?",
+          "Access": "ReadWrite"
+        },
+        {
+          "Id": "ResponseXXX",
+          "Name": "ResponseXXX",
+          "Type": "Compiled:Object?",
+          "Access": "ReadWrite"
+        }
+      ]
+    }
+  },
+  {
+    "Type": "Generated",
+    "Value": {
+      "Id": "C_lzVV.Operations.AnimalGetById.Result",
+      "Properties": [
+        {
+          "Id": "HttpContext",
+          "Name": "HttpContext",
+          "Type": "Compiled:Twenty57.Linx.Plugins.Rest.Shared.OpenAPIWebService.OpenAPI.Data.Out.HttpContext, Twenty57.Linx.Plugins.Rest.Shared?",
+          "Access": "ReadWrite"
+        },
+        {
+          "Id": "Response200",
+          "Name": "Response200",
+          "Type": "Generated:C_lzVV.Schema.AnimalRead?",
+          "Access": "ReadWrite"
+        },
+        {
+          "Id": "Response500",
+          "Name": "Response500",
+          "Type": "Generated:C_lzVV.Schema.DefaultResponse?",
+          "Access": "ReadWrite"
+        },
+        {
+          "Id": "ResponseXXX",
+          "Name": "ResponseXXX",
+          "Type": "Compiled:Object?",
+          "Access": "ReadWrite"
+        }
+      ]
+    }
+  },
+  {
+    "Type": "Generated",
+    "Value": {
+      "Id": "C_lzVV.Operations.AnimalGetList.Result",
+      "Properties": [
+        {
+          "Id": "HttpContext",
+          "Name": "HttpContext",
+          "Type": "Compiled:Twenty57.Linx.Plugins.Rest.Shared.OpenAPIWebService.OpenAPI.Data.Out.HttpContext, Twenty57.Linx.Plugins.Rest.Shared?",
+          "Access": "ReadWrite"
+        },
+        {
+          "Id": "Response200",
+          "Name": "Response200",
+          "Type": "Generated:C_lzVV.Schema.AnimalReadList?",
+          "Access": "ReadWrite"
+        },
+        {
+          "Id": "Response500",
+          "Name": "Response500",
+          "Type": "Generated:C_lzVV.Schema.DefaultResponse?",
+          "Access": "ReadWrite"
+        },
+        {
+          "Id": "ResponseXXX",
+          "Name": "ResponseXXX",
+          "Type": "Compiled:Object?",
+          "Access": "ReadWrite"
+        }
+      ]
+    }
+  },
+  {
+    "Type": "Generated",
+    "Value": {
+      "Id": "C_lzVV.Operations.AnimalUpdate.Result",
+      "Properties": [
+        {
+          "Id": "HttpContext",
+          "Name": "HttpContext",
+          "Type": "Compiled:Twenty57.Linx.Plugins.Rest.Shared.OpenAPIWebService.OpenAPI.Data.Out.HttpContext, Twenty57.Linx.Plugins.Rest.Shared?",
+          "Access": "ReadWrite"
+        },
+        {
+          "Id": "Response200",
+          "Name": "Response200",
+          "Type": "Generated:C_lzVV.Schema.DefaultResponse?",
+          "Access": "ReadWrite"
+        },
+        {
+          "Id": "Response500",
+          "Name": "Response500",
+          "Type": "Generated:C_lzVV.Schema.DefaultResponse?",
+          "Access": "ReadWrite"
+        },
+        {
+          "Id": "ResponseXXX",
+          "Name": "ResponseXXX",
+          "Type": "Compiled:Object?",
+          "Access": "ReadWrite"
+        }
+      ]
+    }
+  },
+  {
+    "Type": "Generated",
+    "Value": {
+      "Id": "C_lzVV.Operations.HabitatGetList.Result",
+      "Properties": [
+        {
+          "Id": "HttpContext",
+          "Name": "HttpContext",
+          "Type": "Compiled:Twenty57.Linx.Plugins.Rest.Shared.OpenAPIWebService.OpenAPI.Data.Out.HttpContext, Twenty57.Linx.Plugins.Rest.Shared?",
+          "Access": "ReadWrite"
+        },
+        {
+          "Id": "Response200",
+          "Name": "Response200",
+          "Type": "Generated:C_lzVV.Schema.HabitatReadList?",
+          "Access": "ReadWrite"
+        },
+        {
+          "Id": "Response500",
+          "Name": "Response500",
+          "Type": "Generated:C_lzVV.Schema.DefaultResponse?",
+          "Access": "ReadWrite"
+        },
+        {
+          "Id": "ResponseXXX",
+          "Name": "ResponseXXX",
+          "Type": "Compiled:Object?",
+          "Access": "ReadWrite"
+        }
+      ]
+    }
+  },
+  {
+    "Type": "Generated",
+    "Value": {
+      "Id": "C_lzVV.Schema.AnimalRead",
+      "Properties": [
+        {
+          "Id": "Age",
+          "Name": "Age",
+          "Type": "Compiled:Int32",
+          "Access": "ReadWrite"
+        },
+        {
+          "Id": "Diet",
+          "Name": "Diet",
+          "Type": "Compiled:String?",
+          "Access": "ReadWrite"
+        },
+        {
+          "Id": "HabitatId",
+          "Name": "HabitatId",
+          "Type": "Compiled:Int32",
+          "Access": "ReadWrite"
+        },
+        {
+          "Id": "HabitatName",
+          "Name": "HabitatName",
+          "Type": "Compiled:String?",
+          "Access": "ReadWrite"
+        },
+        {
+          "Id": "Id",
+          "Name": "Id",
+          "Type": "Compiled:Int32",
+          "Access": "ReadWrite"
+        },
+        {
+          "Id": "LastChangedDate",
+          "Name": "LastChangedDate",
+          "Type": "Compiled:String?",
+          "Access": "ReadWrite"
+        },
+        {
+          "Id": "LastChangedUser",
+          "Name": "LastChangedUser",
+          "Type": "Compiled:String?",
+          "Access": "ReadWrite"
+        },
+        {
+          "Id": "Name",
+          "Name": "Name",
+          "Type": "Compiled:String?",
+          "Access": "ReadWrite"
+        },
+        {
+          "Id": "Species",
+          "Name": "Species",
+          "Type": "Compiled:String?",
+          "Access": "ReadWrite"
+        }
+      ]
+    }
+  },
+  {
+    "Type": "Generated",
+    "Value": {
+      "Id": "C_lzVV.Schema.AnimalReadList",
+      "Properties": [
+        {
+          "Id": "Animals",
+          "Name": "Animals",
+          "Type": "List:?Generated:C_lzVV.Schema.AnimalRead?",
+          "Access": "ReadWrite"
+        }
+      ]
+    }
+  },
+  {
+    "Type": "Generated",
+    "Value": {
+      "Id": "C_lzVV.Schema.AnimalWrite",
+      "Properties": [
+        {
+          "Id": "Age",
+          "Name": "Age",
+          "Type": "Compiled:Int32",
+          "Access": "ReadWrite"
+        },
+        {
+          "Id": "Diet",
+          "Name": "Diet",
+          "Type": "Compiled:String?",
+          "Access": "ReadWrite"
+        },
+        {
+          "Id": "HabitatId",
+          "Name": "HabitatId",
+          "Type": "Compiled:Int32",
+          "Access": "ReadWrite"
+        },
+        {
+          "Id": "Name",
+          "Name": "Name",
+          "Type": "Compiled:String?",
+          "Access": "ReadWrite"
+        },
+        {
+          "Id": "Species",
+          "Name": "Species",
+          "Type": "Compiled:String?",
+          "Access": "ReadWrite"
+        }
+      ]
+    }
+  },
+  {
+    "Type": "Generated",
+    "Value": {
+      "Id": "C_lzVV.Schema.DefaultResponse",
+      "Properties": [
+        {
+          "Id": "Id",
+          "Name": "Id",
+          "Type": "Compiled:Int32",
+          "Access": "ReadWrite"
+        },
+        {
+          "Id": "Messages",
+          "Name": "Messages",
+          "Type": "List:?Compiled:String?",
+          "Access": "ReadWrite"
+        },
+        {
+          "Id": "MessageType",
+          "Name": "MessageType",
+          "Type": "Compiled:String?",
+          "Access": "ReadWrite"
+        }
+      ]
+    }
+  },
+  {
+    "Type": "Generated",
+    "Value": {
+      "Id": "C_lzVV.Schema.HabitatRead",
+      "Properties": [
+        {
+          "Id": "Id",
+          "Name": "Id",
+          "Type": "Compiled:Int32",
+          "Access": "ReadWrite"
+        },
+        {
+          "Id": "LastChangedDate",
+          "Name": "LastChangedDate",
+          "Type": "Compiled:String?",
+          "Access": "ReadWrite"
+        },
+        {
+          "Id": "LastChangedUser",
+          "Name": "LastChangedUser",
+          "Type": "Compiled:String?",
+          "Access": "ReadWrite"
+        },
+        {
+          "Id": "Name",
+          "Name": "Name",
+          "Type": "Compiled:String?",
+          "Access": "ReadWrite"
+        }
+      ]
+    }
+  },
+  {
+    "Type": "Generated",
+    "Value": {
+      "Id": "C_lzVV.Schema.HabitatReadList",
+      "Properties": [
+        {
+          "Id": "Habitats",
+          "Name": "Habitats",
+          "Type": "List:?Generated:C_lzVV.Schema.HabitatRead?",
+          "Access": "ReadWrite"
+        }
+      ]
+    }
+  }
+]

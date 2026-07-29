@@ -1,0 +1,29 @@
+{
+  "Properties": [
+    {
+      "Id": "Value",
+      "Type": "Compiled:Twenty57.Linx.Plugins.Rest.Shared.OpenAPIWebService.OpenAPI.OperationEvents.Authenticate.AuthenticateEventOutput, Twenty57.Linx.Plugins.Rest.Shared?",
+      "ValueUsage": "RuntimeRead",
+      "Value": {
+        "ParsedExpression": "{\"HttpContext\":{\"LinxExpression\":\"[PARSED]\"}}",
+        "ExpressionPlaceholders": [
+          {
+            "typePath": [
+              "HttpContext"
+            ],
+            "expression": {
+              "Expression": "AuthenticateUser",
+              "CompiledExpression": "={0}",
+              "Type": "Custom:pQ0u?"
+            }
+          }
+        ]
+      },
+      "ValueType": "Linx.JsonExpression?"
+    }
+  ],
+  "RuntimeCharacteristics": {
+    "IsTerminating": true,
+    "ExecutionPathExecution": "ZeroOrMore"
+  }
+}

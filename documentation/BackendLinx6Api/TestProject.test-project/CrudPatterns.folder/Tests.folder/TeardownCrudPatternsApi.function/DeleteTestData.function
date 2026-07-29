@@ -1,0 +1,44 @@
+{
+  "Properties": [
+    {
+      "Id": "Connection string",
+      "Type": "Compiled:String?",
+      "ValueUsage": "RuntimeRead",
+      "Value": {
+        "Expression": "$.Settings.DatabaseConnection",
+        "CompiledExpression": "={0}",
+        "Type": "Compiled:String?"
+      },
+      "ValueType": "Linx.CSharpExpression?"
+    },
+    {
+      "Id": "Connection type",
+      "Type": "Compiled:Twenty57.Linx.Plugins.Database.Shared.Common.Sql.DesignerConnectionType, Twenty57.Linx.Plugins.Database.Shared?",
+      "ValueUsage": "DesignTime",
+      "Value": "SqlServer"
+    },
+    {
+      "Id": "Result type",
+      "Type": "Compiled:Twenty57.Linx.Plugins.Database.Shared.ExecuteSQL.ResultType, Twenty57.Linx.Plugins.Database.Shared?",
+      "ValueUsage": "DesignTime",
+      "Value": {
+        "CustomType": null,
+        "Fields": [],
+        "IsCustomType": true
+      }
+    },
+    {
+      "Id": "SQL",
+      "Type": "Compiled:String?",
+      "ValueUsage": "RuntimeRead",
+      "Value": "DELETE FROM [dbo].[Animal] \r\nWHERE Id < 0;\r\n\r\nDELETE FROM [dbo].[Animal] \r\nWHERE [Name] IN ('TestingName', 'TestingName2');\r\n\r\nDELETE FROM [dbo].[Habitat] \r\nWHERE Id < 0;\r\n\r\n"
+    },
+    {
+      "Id": "Timeout",
+      "Type": "Compiled:Int32",
+      "ValueUsage": "DesignTime",
+      "Value": 60
+    }
+  ],
+  "Version": "3"
+}

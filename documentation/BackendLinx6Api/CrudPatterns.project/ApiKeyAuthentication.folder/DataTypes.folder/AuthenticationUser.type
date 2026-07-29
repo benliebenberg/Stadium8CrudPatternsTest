@@ -1,0 +1,21 @@
+{
+  "Id": "BnvN",
+  "Name": "AuthenticationUser",
+  "Properties": [
+    {
+      "Id": "0O0d",
+      "Name": "AuthenticationType",
+      "Type": "Compiled:String?"
+    },
+    {
+      "Id": "I6TU",
+      "Name": "IsAuthenticated",
+      "Type": "Compiled:Boolean"
+    },
+    {
+      "Id": "Qzek",
+      "Name": "Name",
+      "Type": "Compiled:String?"
+    }
+  ]
+}

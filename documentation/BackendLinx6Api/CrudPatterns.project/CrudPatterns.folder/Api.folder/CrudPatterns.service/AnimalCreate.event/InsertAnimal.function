@@ -1,0 +1,124 @@
+{
+  "Properties": [
+    {
+      "Id": "Connection string",
+      "Type": "Compiled:String?",
+      "ValueUsage": "RuntimeRead",
+      "Value": {
+        "Expression": "$.Settings.DatabaseConnection",
+        "CompiledExpression": "={0}",
+        "Type": "Compiled:String?"
+      },
+      "ValueType": "Linx.CSharpExpression?"
+    },
+    {
+      "Id": "Connection type",
+      "Type": "Compiled:Twenty57.Linx.Plugins.Database.Shared.Common.Sql.DesignerConnectionType, Twenty57.Linx.Plugins.Database.Shared?",
+      "ValueUsage": "DesignTime",
+      "Value": "SqlServer"
+    },
+    {
+      "Id": "Expression0",
+      "Type": "Compiled:Object?",
+      "ValueUsage": "RuntimeRead",
+      "Value": {
+        "Expression": "$.Parameters.body.Name",
+        "CompiledExpression": "={0}",
+        "Type": "Compiled:String?"
+      },
+      "ValueType": "Linx.CSharpExpression?"
+    },
+    {
+      "Id": "Expression1",
+      "Type": "Compiled:Object?",
+      "ValueUsage": "RuntimeRead",
+      "Value": {
+        "Expression": "$.Parameters.body.Species",
+        "CompiledExpression": "={0}",
+        "Type": "Compiled:String?"
+      },
+      "ValueType": "Linx.CSharpExpression?"
+    },
+    {
+      "Id": "Expression2",
+      "Type": "Compiled:Object?",
+      "ValueUsage": "RuntimeRead",
+      "Value": {
+        "Expression": "$.Parameters.body.Age",
+        "CompiledExpression": "={0}",
+        "Type": "Compiled:Int32"
+      },
+      "ValueType": "Linx.CSharpExpression?"
+    },
+    {
+      "Id": "Expression3",
+      "Type": "Compiled:Object?",
+      "ValueUsage": "RuntimeRead",
+      "Value": {
+        "Expression": "$.Parameters.body.HabitatId",
+        "CompiledExpression": "={0}",
+        "Type": "Compiled:Int32"
+      },
+      "ValueType": "Linx.CSharpExpression?"
+    },
+    {
+      "Id": "Expression4",
+      "Type": "Compiled:Object?",
+      "ValueUsage": "RuntimeRead",
+      "Value": {
+        "Expression": "$.Parameters.body.Diet",
+        "CompiledExpression": "={0}",
+        "Type": "Compiled:String?"
+      },
+      "ValueType": "Linx.CSharpExpression?"
+    },
+    {
+      "Id": "Expression5",
+      "Type": "Compiled:Object?",
+      "ValueUsage": "RuntimeRead",
+      "Value": {
+        "Expression": "$.Parameters.LastChangedUser",
+        "CompiledExpression": "={0}",
+        "Type": "Compiled:String?"
+      },
+      "ValueType": "Linx.CSharpExpression?"
+    },
+    {
+      "Id": "Result type",
+      "Type": "Compiled:Twenty57.Linx.Plugins.Database.Shared.ExecuteSQL.ResultType, Twenty57.Linx.Plugins.Database.Shared?",
+      "ValueUsage": "DesignTime",
+      "Value": {
+        "CustomType": null,
+        "Fields": [
+          {
+            "ColumnName": "Id",
+            "Name": "Id",
+            "ColumnType": null,
+            "TypeReference": "Compiled:Int64"
+          }
+        ],
+        "IsCustomType": true
+      }
+    },
+    {
+      "Id": "Return options",
+      "Type": "Compiled:Twenty57.Linx.Plugins.Database.Shared.ExecuteSQL.ReturnModeType, Twenty57.Linx.Plugins.Database.Shared?",
+      "ValueUsage": "DesignTime",
+      "Value": "FirstRow"
+    },
+    {
+      "Id": "SQL",
+      "Type": "Compiled:String?",
+      "ValueUsage": "RuntimeRead",
+      "Value": "INSERT INTO Animal \r\n(\r\n\t[Name], \r\n\tSpecies, \r\n\tAge, \r\n\tHabitatId, \r\n\tDiet, \r\n\tLastChangedUser\r\n)\r\nVALUES\r\n(\r\n\t@{$.Parameters.body.Name},\r\n\t@{$.Parameters.body.Species},\r\n\t@{$.Parameters.body.Age},\r\n\t@{$.Parameters.body.HabitatId},\r\n\t@{$.Parameters.body.Diet},\r\n\t@{$.Parameters.LastChangedUser}\r\n)\r\n\r\nSELECT Id = CAST(SCOPE_IDENTITY() AS INT)"
+    },
+    {
+      "Id": "Timeout",
+      "Type": "Compiled:Int32",
+      "ValueUsage": "DesignTime",
+      "Value": 60
+    }
+  ],
+  "Result": "Generated:T_ewFR?",
+  "Version": "3"
+}

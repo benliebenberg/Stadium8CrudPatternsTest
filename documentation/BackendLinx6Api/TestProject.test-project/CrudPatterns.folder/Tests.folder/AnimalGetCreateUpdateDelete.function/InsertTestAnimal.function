@@ -1,0 +1,44 @@
+{
+  "Properties": [
+    {
+      "Id": "Connection string",
+      "Type": "Compiled:String?",
+      "ValueUsage": "RuntimeRead",
+      "Value": {
+        "Expression": "$.Settings.DatabaseConnection",
+        "CompiledExpression": "={0}",
+        "Type": "Compiled:String?"
+      },
+      "ValueType": "Linx.CSharpExpression?"
+    },
+    {
+      "Id": "Connection type",
+      "Type": "Compiled:Twenty57.Linx.Plugins.Database.Shared.Common.Sql.DesignerConnectionType, Twenty57.Linx.Plugins.Database.Shared?",
+      "ValueUsage": "DesignTime",
+      "Value": "SqlServer"
+    },
+    {
+      "Id": "Result type",
+      "Type": "Compiled:Twenty57.Linx.Plugins.Database.Shared.ExecuteSQL.ResultType, Twenty57.Linx.Plugins.Database.Shared?",
+      "ValueUsage": "DesignTime",
+      "Value": {
+        "CustomType": null,
+        "Fields": [],
+        "IsCustomType": true
+      }
+    },
+    {
+      "Id": "SQL",
+      "Type": "Compiled:String?",
+      "ValueUsage": "RuntimeRead",
+      "Value": "IF EXISTS (SELECT 1 FROM [dbo].[Animal] WHERE Id = -10000)\r\nBEGIN  \r\n\tUPDATE \r\n\t\t[dbo].[Animal]\r\n\tSET \r\n\t\t[Name] = 'Testing'\r\n\t\t,[Species] = 'TestSpecies'\r\n\t\t,[Age] = 12\r\n\t\t,[HabitatId] = 1\r\n\t\t,[Diet] = 'Herbivore'\r\n\t\t,[LastChangedUser] = 'System'\r\n\t WHERE \r\n\t \tId = -10000;\r\nEND\r\nELSE\r\nBEGIN\r\n    SET IDENTITY_INSERT [dbo].[Animal] ON;\r\n    \r\n\tINSERT INTO [dbo].[Animal]\r\n           ([Id]\r\n           ,[Name]\r\n           ,[Species]\r\n           ,[Age]\r\n           ,[HabitatId]\r\n           ,[Diet]\r\n           ,[LastChangedUser])\r\n\tVALUES\r\n           (-10000\r\n           ,'Testing'\r\n           ,'TestSpecies'\r\n           ,12\r\n           ,1\r\n           ,'Herbivore'\r\n           ,'System')\r\n\r\n    SET IDENTITY_INSERT [dbo].[Animal] OFF;\r\nEND"
+    },
+    {
+      "Id": "Timeout",
+      "Type": "Compiled:Int32",
+      "ValueUsage": "DesignTime",
+      "Value": 60
+    }
+  ],
+  "Version": "3"
+}

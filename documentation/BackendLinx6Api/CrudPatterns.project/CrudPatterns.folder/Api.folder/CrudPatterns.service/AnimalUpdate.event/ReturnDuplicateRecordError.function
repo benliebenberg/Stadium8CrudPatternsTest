@@ -1,0 +1,15 @@
+{
+  "Properties": [
+    {
+      "Id": "Value",
+      "Type": "Generated:C_lzVV.Operations.AnimalUpdate.Result?",
+      "ValueUsage": "RuntimeRead",
+      "Value": "{\"HttpContext\":{\"StatusCode\":500, \"Headers\":[{\"Name\":\"content-type\", \"Value\":[\"application/json\"]}]}, \"Response200\":{}, \"Response500\":{\"Id\":0, \"MessageType\":\"Warning\", \"Messages\":[\"Animal already exists\"]}}",
+      "ValueType": "String?"
+    }
+  ],
+  "RuntimeCharacteristics": {
+    "IsTerminating": true,
+    "ExecutionPathExecution": "ZeroOrMore"
+  }
+}

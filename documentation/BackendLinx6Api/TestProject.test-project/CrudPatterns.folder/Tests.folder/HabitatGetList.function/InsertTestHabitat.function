@@ -1,0 +1,44 @@
+{
+  "Properties": [
+    {
+      "Id": "Connection string",
+      "Type": "Compiled:String?",
+      "ValueUsage": "RuntimeRead",
+      "Value": {
+        "Expression": "$.Settings.DatabaseConnection",
+        "CompiledExpression": "={0}",
+        "Type": "Compiled:String?"
+      },
+      "ValueType": "Linx.CSharpExpression?"
+    },
+    {
+      "Id": "Connection type",
+      "Type": "Compiled:Twenty57.Linx.Plugins.Database.Shared.Common.Sql.DesignerConnectionType, Twenty57.Linx.Plugins.Database.Shared?",
+      "ValueUsage": "DesignTime",
+      "Value": "SqlServer"
+    },
+    {
+      "Id": "Result type",
+      "Type": "Compiled:Twenty57.Linx.Plugins.Database.Shared.ExecuteSQL.ResultType, Twenty57.Linx.Plugins.Database.Shared?",
+      "ValueUsage": "DesignTime",
+      "Value": {
+        "CustomType": null,
+        "Fields": [],
+        "IsCustomType": true
+      }
+    },
+    {
+      "Id": "SQL",
+      "Type": "Compiled:String?",
+      "ValueUsage": "RuntimeRead",
+      "Value": "IF EXISTS (SELECT 1 FROM [dbo].[Habitat] WHERE Id = -10000)\r\nBEGIN  \r\n\tUPDATE \r\n\t\t[dbo].[Habitat]\r\n\tSET \r\n\t\t[Name] = 'TestHabitat'\r\n\t\t,[LastChangedUser] = 'System'\r\n\t WHERE \r\n\t \tId = -10000;\r\nEND\r\nELSE\r\nBEGIN\r\n    SET IDENTITY_INSERT [dbo].[Habitat] ON;\r\n    \r\n\tINSERT INTO [dbo].[Habitat]\r\n\t\t([Id]\r\n\t\t,[Name]\r\n\t\t,[LastChangedUser])\r\n\tVALUES\r\n\t\t(-10000\r\n\t\t,'TestHabitat'\r\n\t\t,'System')\r\n\r\n    SET IDENTITY_INSERT [dbo].[Habitat] OFF;\r\nEND\r\n"
+    },
+    {
+      "Id": "Timeout",
+      "Type": "Compiled:Int32",
+      "ValueUsage": "DesignTime",
+      "Value": 60
+    }
+  ],
+  "Version": "3"
+}

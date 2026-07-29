@@ -1,0 +1,29 @@
+{
+  "Properties": [
+    {
+      "Id": "Value",
+      "Type": "Generated:C_lzVV.Operations.AnimalGetById.Result?",
+      "ValueUsage": "RuntimeRead",
+      "Value": {
+        "ParsedExpression": "{\"Response200\":{\"LinxExpression\":\"[PARSED]\"}}",
+        "ExpressionPlaceholders": [
+          {
+            "typePath": [
+              "Response200"
+            ],
+            "expression": {
+              "Expression": "ReadAnimal",
+              "CompiledExpression": "={0}",
+              "Type": "Generated:T_VFvm?"
+            }
+          }
+        ]
+      },
+      "ValueType": "Linx.JsonExpression?"
+    }
+  ],
+  "RuntimeCharacteristics": {
+    "IsTerminating": true,
+    "ExecutionPathExecution": "ZeroOrMore"
+  }
+}

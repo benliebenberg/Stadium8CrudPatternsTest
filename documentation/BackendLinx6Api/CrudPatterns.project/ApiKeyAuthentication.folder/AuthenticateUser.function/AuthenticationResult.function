@@ -1,0 +1,26 @@
+{
+  "Properties": [
+    {
+      "Id": "Nullable",
+      "Type": "Compiled:Boolean",
+      "ValueUsage": "DesignTime",
+      "Value": true
+    },
+    {
+      "Id": "Type",
+      "Type": "Compiled:Linx.ITypeReference?",
+      "ValueUsage": "DesignTime",
+      "Value": "Custom:pQ0u?",
+      "ValueType": "Linx.ValidCustomTypeReference?"
+    },
+    {
+      "Id": "Value",
+      "Type": "Custom:pQ0u?",
+      "ValueUsage": "RuntimeRead",
+      "Value": "{}",
+      "ValueType": "String?"
+    }
+  ],
+  "Result": "Custom:pQ0u?",
+  "Version": "1"
+}

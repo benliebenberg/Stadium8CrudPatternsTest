@@ -1,0 +1,16 @@
+[
+  {
+    "Type": "Generated",
+    "Value": {
+      "Id": "T_4ygL",
+      "Properties": [
+        {
+          "Id": "yP1J",
+          "Name": "AuthenticationData",
+          "Type": "Custom:S49U?",
+          "Access": "ReadWrite"
+        }
+      ]
+    }
+  }
+]

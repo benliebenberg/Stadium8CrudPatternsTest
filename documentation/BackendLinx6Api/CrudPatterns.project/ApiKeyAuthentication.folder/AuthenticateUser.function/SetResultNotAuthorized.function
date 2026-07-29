@@ -1,0 +1,48 @@
+{
+  "Properties": [
+    {
+      "Id": "Source",
+      "Type": "Custom:pQ0u?",
+      "ValueUsage": "RuntimeRead",
+      "Value": {
+        "ParsedExpression": "{\"StatusCode\":\"401\", \"StatusReason\":\"Unauthorized\", \"User\":{\"AuthenticationType\":{\"LinxExpression\":\"[PARSED]\"}, \"IsAuthenticated\":false, \"Name\":{\"LinxExpression\":\"[PARSED]\"}}}",
+        "ExpressionPlaceholders": [
+          {
+            "typePath": [
+              "User",
+              "AuthenticationType"
+            ],
+            "expression": {
+              "Expression": "$.Parameters.AuthenticationData.SchemeType",
+              "CompiledExpression": "={0}",
+              "Type": "Compiled:String?"
+            }
+          },
+          {
+            "typePath": [
+              "User",
+              "Name"
+            ],
+            "expression": {
+              "Expression": "$.Parameters.AuthenticationData.SchemeName",
+              "CompiledExpression": "={0}",
+              "Type": "Compiled:String?"
+            }
+          }
+        ]
+      },
+      "ValueType": "Linx.JsonExpression?"
+    },
+    {
+      "Id": "Target",
+      "Type": "Custom:pQ0u?",
+      "ValueUsage": "RuntimeWrite",
+      "Value": {
+        "Expression": "AuthenticationResult",
+        "CompiledExpression": "={0}",
+        "Type": "Custom:pQ0u?"
+      },
+      "ValueType": "Linx.CSharpExpression?"
+    }
+  ]
+}

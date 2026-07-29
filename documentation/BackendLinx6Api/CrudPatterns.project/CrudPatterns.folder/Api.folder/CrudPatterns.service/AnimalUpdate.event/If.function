@@ -1,0 +1,61 @@
+{
+  "Properties": [
+    {
+      "Id": "Conditions",
+      "Type": "Compiled:System.Collections.Generic.List`1[[Twenty57.Linx.Plugins.Standard.Shared.IfElse.Condition, Twenty57.Linx.Plugins.Standard.Shared]], System.Private.CoreLib?",
+      "ValueUsage": "DesignTime",
+      "Value": [
+        {
+          "ExecutionPathId": "TF0G",
+          "Name": "DuplicateRecord"
+        }
+      ]
+    },
+    {
+      "Id": "Expression_0",
+      "Type": "Compiled:Boolean",
+      "ValueUsage": "RuntimeRead",
+      "Value": {
+        "Expression": "TryCatch.Catch.ErrorMessage.Contains(\"duplicate\")",
+        "CompiledExpression": "={0}.Contains(\"duplicate\")",
+        "Type": "Compiled:Boolean"
+      },
+      "ValueType": "Linx.CSharpExpression?"
+    },
+    {
+      "Id": "Show else",
+      "Type": "Compiled:Boolean",
+      "ValueUsage": "DesignTime",
+      "Value": true
+    },
+    {
+      "Id": "Stop when true",
+      "Type": "Compiled:Boolean",
+      "ValueUsage": "DesignTime",
+      "Value": true
+    }
+  ],
+  "ExecutionPaths": [
+    {
+      "PluginId": "TF0G",
+      "Name": "DuplicateRecord",
+      "Result": null,
+      "Order": 0,
+      "IterationHint": "ZeroOrOnce",
+      "ConstitutesControlFlow": true
+    },
+    {
+      "PluginId": "Else",
+      "Name": "Else",
+      "Result": null,
+      "Order": 1,
+      "IterationHint": "ZeroOrOnce",
+      "ConstitutesControlFlow": true
+    }
+  ],
+  "RuntimeCharacteristics": {
+    "IsTerminating": false,
+    "ExecutionPathExecution": "OneOrMore"
+  },
+  "Version": "1"
+}

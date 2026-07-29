@@ -1,0 +1,32 @@
+[
+  {
+    "Id": "0dWG",
+    "Name": "CrudPatternsBaseUri",
+    "Type": "Compiled:String?",
+    "Value": "http://localhost:10002/crud-patterns"
+  },
+  {
+    "Id": "NpCG",
+    "Name": "CrudPatternsApiKey",
+    "Type": "Compiled:String?",
+    "Secret": true
+  },
+  {
+    "Id": "CXSO",
+    "Name": "DatabaseConnection",
+    "Type": "Compiled:String?",
+    "Value": "Data Source={DatabaseServer};Initial Catalog={DatabaseName};TrustServerCertificate=True;Integrated Security=True;"
+  },
+  {
+    "Id": "hULp",
+    "Name": "DatabaseName",
+    "Type": "Compiled:String?",
+    "Value": "CrudPatterns"
+  },
+  {
+    "Id": "Pl59",
+    "Name": "DatabaseServer",
+    "Type": "Compiled:String?",
+    "Value": "SQL2022"
+  }
+]

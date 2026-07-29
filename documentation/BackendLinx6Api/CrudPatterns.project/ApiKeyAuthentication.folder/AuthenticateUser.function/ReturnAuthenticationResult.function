@@ -1,0 +1,19 @@
+{
+  "Properties": [
+    {
+      "Id": "Value",
+      "Type": "Custom:pQ0u?",
+      "ValueUsage": "RuntimeRead",
+      "Value": {
+        "Expression": "AuthenticationResult",
+        "CompiledExpression": "={0}",
+        "Type": "Custom:pQ0u?"
+      },
+      "ValueType": "Linx.CSharpExpression?"
+    }
+  ],
+  "RuntimeCharacteristics": {
+    "IsTerminating": true,
+    "ExecutionPathExecution": "ZeroOrMore"
+  }
+}

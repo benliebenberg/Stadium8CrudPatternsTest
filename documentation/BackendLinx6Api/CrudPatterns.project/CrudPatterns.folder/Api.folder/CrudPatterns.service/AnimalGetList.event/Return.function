@@ -1,0 +1,30 @@
+{
+  "Properties": [
+    {
+      "Id": "Value",
+      "Type": "Generated:C_lzVV.Operations.AnimalGetList.Result?",
+      "ValueUsage": "RuntimeRead",
+      "Value": {
+        "ParsedExpression": "{\"Response200\":{\"Animals\":{\"LinxExpression\":\"[PARSED]\"}}}",
+        "ExpressionPlaceholders": [
+          {
+            "typePath": [
+              "Response200",
+              "Animals"
+            ],
+            "expression": {
+              "Expression": "ReadAnimals",
+              "CompiledExpression": "={0}",
+              "Type": "List:?Generated:T_XXRQ?"
+            }
+          }
+        ]
+      },
+      "ValueType": "Linx.JsonExpression?"
+    }
+  ],
+  "RuntimeCharacteristics": {
+    "IsTerminating": true,
+    "ExecutionPathExecution": "ZeroOrMore"
+  }
+}

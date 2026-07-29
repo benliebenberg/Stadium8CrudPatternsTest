@@ -1,0 +1,16 @@
+{
+  "ApplicationVersion": "6.14.0.0",
+  "SolutionVersion": 18,
+  "Plugins": [
+    "twenty57.linx.plugins.database, 3.2.1",
+    "twenty57.linx.plugins.rest, 3.0.2",
+    "twenty57.linx.plugins.standard, 2.2.0",
+    "twenty57.linx.plugins.utilities, 1.5.0"
+  ],
+  "Dependencies": [
+    "twenty57.linx.solutiondependencies.compilation, 5.2.1",
+    "twenty57.linx.solutiondependencies.types, 1.6.0"
+  ],
+  "ProjectName": "CrudPatterns",
+  "TestProjectName": "TestProject"
+}

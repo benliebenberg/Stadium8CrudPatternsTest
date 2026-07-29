@@ -1,0 +1,21 @@
+{
+  "Id": "pQ0u",
+  "Name": "AuthenticationResult",
+  "Properties": [
+    {
+      "Id": "lDVg",
+      "Name": "StatusCode",
+      "Type": "Compiled:String?"
+    },
+    {
+      "Id": "pIGu",
+      "Name": "StatusReason",
+      "Type": "Compiled:String?"
+    },
+    {
+      "Id": "edX5",
+      "Name": "User",
+      "Type": "Custom:BnvN?"
+    }
+  ]
+}

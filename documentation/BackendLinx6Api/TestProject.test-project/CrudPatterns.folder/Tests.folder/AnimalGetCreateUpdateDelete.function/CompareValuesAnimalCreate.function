@@ -1,0 +1,44 @@
+{
+  "Properties": [
+    {
+      "Id": "Actual",
+      "Type": "Compiled:Object?",
+      "ValueUsage": "RuntimeRead",
+      "Value": {
+        "Expression": "GetAnimalListAfterCreate.ResponseBody.Contains(\"\\\"Name\\\":\\\"TestingName\\\"\")",
+        "CompiledExpression": "={0}.Contains(\"\\\"Name\\\":\\\"TestingName\\\"\")",
+        "Type": "Compiled:Boolean"
+      },
+      "ValueType": "Linx.CSharpExpression?"
+    },
+    {
+      "Id": "Assertion",
+      "Type": "Compiled:Twenty57.Linx.Plugins.Utilities.Shared.Assert.AssertionType, Twenty57.Linx.Plugins.Utilities.Shared?",
+      "ValueUsage": "DesignTime",
+      "Value": "AreEqual"
+    },
+    {
+      "Id": "Expected",
+      "Type": "Compiled:Object?",
+      "ValueUsage": "RuntimeRead",
+      "Value": {
+        "Expression": "true",
+        "CompiledExpression": "=true",
+        "Type": "Compiled:Boolean"
+      },
+      "ValueType": "Linx.CSharpExpression?"
+    },
+    {
+      "Id": "Message",
+      "Type": "Compiled:String?",
+      "ValueUsage": "RuntimeRead",
+      "Value": ""
+    },
+    {
+      "Id": "Tolerance",
+      "Type": "Compiled:System.Nullable`1[[System.Double, System.Private.CoreLib]], System.Private.CoreLib",
+      "ValueUsage": "RuntimeRead",
+      "Value": null
+    }
+  ]
+}

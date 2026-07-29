@@ -1,0 +1,21 @@
+{
+  "Id": "S49U",
+  "Name": "AuthenticationData",
+  "Properties": [
+    {
+      "Id": "XH2S",
+      "Name": "ApiKey",
+      "Type": "Custom:YZdA?"
+    },
+    {
+      "Id": "nq8b",
+      "Name": "SchemeName",
+      "Type": "Compiled:String?"
+    },
+    {
+      "Id": "5KYT",
+      "Name": "SchemeType",
+      "Type": "Compiled:String?"
+    }
+  ]
+}

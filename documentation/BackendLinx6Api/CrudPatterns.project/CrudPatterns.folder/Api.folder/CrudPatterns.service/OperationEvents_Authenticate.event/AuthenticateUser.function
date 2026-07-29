@@ -1,0 +1,39 @@
+{
+  "Properties": [
+    {
+      "Id": "ParameterNameMapping",
+      "Type": "Compiled:System.Collections.Generic.IDictionary`2[[System.String, System.Private.CoreLib],[System.String, System.Private.CoreLib]], System.Private.CoreLib?",
+      "ValueUsage": "DesignTime",
+      "Value": {
+        "yP1J": "AuthenticationData"
+      },
+      "ValueType": "System.Collections.Generic.Dictionary`2[[System.String, System.Private.CoreLib],[System.String, System.Private.CoreLib]], System.Private.CoreLib?"
+    },
+    {
+      "Id": "Process",
+      "Type": "Compiled:Linx.IProcessReference?",
+      "ValueUsage": "DesignTime",
+      "Value": {
+        "Id": "8lcY",
+        "Name": "ApiKeyAuthentication.AuthenticateUser",
+        "Parameters": "Generated:T_4ygL?",
+        "Result": "Custom:pQ0u?",
+        "IsValid": true,
+        "QualifiedPath": "FL:ApiKeyAuthentication→PC:AuthenticateUser"
+      },
+      "ValueType": "Linx.ProcessReference?"
+    },
+    {
+      "Id": "yP1J",
+      "Type": "Custom:S49U?",
+      "ValueUsage": "RuntimeRead",
+      "Value": {
+        "Expression": "$.Parameters.AuthenticationData",
+        "CompiledExpression": "={0}",
+        "Type": "Compiled:Twenty57.Linx.Plugins.Rest.Shared.OpenAPIWebService.OpenAPI.OperationEvents.Authenticate.AuthenticateEventInputData, Twenty57.Linx.Plugins.Rest.Shared?"
+      },
+      "ValueType": "Linx.CSharpExpression?"
+    }
+  ],
+  "Result": "Custom:pQ0u?"
+}

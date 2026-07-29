@@ -1,0 +1,21 @@
+{
+  "Id": "YZdA",
+  "Name": "AuthenticationDataApiKey",
+  "Properties": [
+    {
+      "Id": "XoJp",
+      "Name": "ProvidedToken",
+      "Type": "Compiled:String?"
+    },
+    {
+      "Id": "tobS",
+      "Name": "TokenLocation",
+      "Type": "Compiled:String?"
+    },
+    {
+      "Id": "oTXm",
+      "Name": "TokenName",
+      "Type": "Compiled:String?"
+    }
+  ]
+}

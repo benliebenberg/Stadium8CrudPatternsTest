@@ -1,0 +1,64 @@
+[
+  {
+    "Type": "Generated",
+    "Value": {
+      "Id": "T_VFvm",
+      "Properties": [
+        {
+          "Id": "Age",
+          "Name": "Age",
+          "Type": "Compiled:Int64",
+          "Access": "ReadWrite"
+        },
+        {
+          "Id": "Diet",
+          "Name": "Diet",
+          "Type": "Compiled:String?",
+          "Access": "ReadWrite"
+        },
+        {
+          "Id": "HabitatId",
+          "Name": "HabitatId",
+          "Type": "Compiled:Int64",
+          "Access": "ReadWrite"
+        },
+        {
+          "Id": "HabitatName",
+          "Name": "HabitatName",
+          "Type": "Compiled:String?",
+          "Access": "ReadWrite"
+        },
+        {
+          "Id": "Id",
+          "Name": "Id",
+          "Type": "Compiled:Int64",
+          "Access": "ReadWrite"
+        },
+        {
+          "Id": "LastChangedDate",
+          "Name": "LastChangedDate",
+          "Type": "Compiled:String?",
+          "Access": "ReadWrite"
+        },
+        {
+          "Id": "LastChangedUser",
+          "Name": "LastChangedUser",
+          "Type": "Compiled:String?",
+          "Access": "ReadWrite"
+        },
+        {
+          "Id": "Name",
+          "Name": "Name",
+          "Type": "Compiled:String?",
+          "Access": "ReadWrite"
+        },
+        {
+          "Id": "Species",
+          "Name": "Species",
+          "Type": "Compiled:String?",
+          "Access": "ReadWrite"
+        }
+      ]
+    }
+  }
+]

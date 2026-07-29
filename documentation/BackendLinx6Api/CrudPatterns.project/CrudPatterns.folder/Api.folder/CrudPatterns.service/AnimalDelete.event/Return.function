@@ -1,0 +1,30 @@
+{
+  "Properties": [
+    {
+      "Id": "Value",
+      "Type": "Generated:C_lzVV.Operations.AnimalDelete.Result?",
+      "ValueUsage": "RuntimeRead",
+      "Value": {
+        "ParsedExpression": "{\"Response200\":{\"Id\":{\"LinxExpression\":\"[PARSED]\"}, \"Messages\":[\"Animal deleted successfully\"], \"MessageType\":\"Success\"}}",
+        "ExpressionPlaceholders": [
+          {
+            "typePath": [
+              "Response200",
+              "Id"
+            ],
+            "expression": {
+              "Expression": "$.Parameters.Id",
+              "CompiledExpression": "={0}",
+              "Type": "Compiled:Int32"
+            }
+          }
+        ]
+      },
+      "ValueType": "Linx.JsonExpression?"
+    }
+  ],
+  "RuntimeCharacteristics": {
+    "IsTerminating": true,
+    "ExecutionPathExecution": "ZeroOrMore"
+  }
+}
