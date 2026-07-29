@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "epic": {
+    "slug": "animal-list",
+    "name": "Animal List",
+    "createdAt": "2026-07-29T13:44:24.192Z",
+    "dependsOn": [],
+    "introducesSharedSurface": false,
+    "unverifiedAssumptions": [],
+    "manualTestResults": []
+  },
+  "phase": "PLAN",
+  "stories": {},
+  "halt": null,
+  "lastUpdated": "2026-07-29T13:44:24.192Z"
+}
