@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "epic": {
+    "slug": "zoo-animal-manager",
+    "name": "Zoo Animal Manager",
+    "createdAt": "2026-07-29T13:58:15.954Z",
+    "dependsOn": [],
+    "introducesSharedSurface": false,
+    "unverifiedAssumptions": [],
+    "manualTestResults": []
+  },
+  "phase": "PLAN",
+  "stories": {},
+  "halt": null,
+  "lastUpdated": "2026-07-29T13:58:15.954Z"
+}
