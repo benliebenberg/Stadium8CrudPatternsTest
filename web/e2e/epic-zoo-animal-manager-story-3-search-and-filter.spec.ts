@@ -178,7 +178,9 @@ test.describe('Epic zoo-animal-manager, Story 3: Search and habitat filter on th
     await habitatFilter(page).click();
 
     await expect(page.getByRole('option', { name: 'Savannah' })).toBeVisible();
-    await expect(page.getByRole('option', { name: 'Rainforest' })).toBeVisible();
+    await expect(
+      page.getByRole('option', { name: 'Rainforest' }),
+    ).toBeVisible();
     // Aquarium is in the habitat list this backend serves, but no LOADED animal lives
     // there — so it must not be offered. Choices come from the roster, which is why this
     // story needs no habitat fetch and has no dependency on story 5.

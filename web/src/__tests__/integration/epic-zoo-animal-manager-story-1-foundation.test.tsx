@@ -174,7 +174,12 @@ function writableFieldsOf(animal: AnimalRead): AnimalWrite {
 }
 
 const ANIMAL_TO_WRITE = writableFieldsOf(
-  createAnimal({ Name: 'Tandi', Species: 'Black Rhinoceros', Age: 5, HabitatId: 1 }),
+  createAnimal({
+    Name: 'Tandi',
+    Species: 'Black Rhinoceros',
+    Age: 5,
+    HabitatId: 1,
+  }),
 );
 
 const fetchMock = vi.fn();
@@ -234,7 +239,8 @@ function outboundRequests(): OutboundRequest[] {
     const init = (call[1] ?? {}) as { method?: unknown; headers?: unknown };
     return {
       url: urlOf(call[0]),
-      method: typeof init.method === 'string' ? init.method.toUpperCase() : 'GET',
+      method:
+        typeof init.method === 'string' ? init.method.toUpperCase() : 'GET',
       headers: normalizeHeaders(init.headers),
     };
   });
@@ -304,7 +310,9 @@ describe('Epic zoo-animal-manager, Story 1: server-side backend access foundatio
 
     // AC-1
     it('covers exactly the six backend operations the server tier proxies', () => {
-      const declared = [...readSpec().matchAll(/^\s+operationId:\s*(\S+)\s*$/gm)]
+      const declared = [
+        ...readSpec().matchAll(/^\s+operationId:\s*(\S+)\s*$/gm),
+      ]
         .map((match) => match[1])
         .sort();
 
@@ -347,7 +355,9 @@ describe('Epic zoo-animal-manager, Story 1: server-side backend access foundatio
       expect(read.headers['x-api-key']).toBe(SERVER_ONLY_API_KEY);
       expect(write.headers['x-api-key']).toBe(SERVER_ONLY_API_KEY);
       expect(Object.values(read.headers)).not.toContain(BROWSER_READABLE_TOKEN);
-      expect(Object.values(write.headers)).not.toContain(BROWSER_READABLE_TOKEN);
+      expect(Object.values(write.headers)).not.toContain(
+        BROWSER_READABLE_TOKEN,
+      );
     });
 
     // AC-2

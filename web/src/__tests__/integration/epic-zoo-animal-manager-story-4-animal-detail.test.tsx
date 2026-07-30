@@ -264,7 +264,9 @@ function pageText(container: HTMLElement): string {
 
 /** Resolve once the record has replaced the loading placeholder. */
 async function findLoadedRecord(): Promise<HTMLElement> {
-  return screen.findByRole('heading', { name: new RegExp(`\\b${NAME}\\b`, 'i') });
+  return screen.findByRole('heading', {
+    name: new RegExp(`\\b${NAME}\\b`, 'i'),
+  });
 }
 
 /** A load still in flight, which the test completes when it chooses to. */

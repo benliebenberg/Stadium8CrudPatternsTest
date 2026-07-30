@@ -140,7 +140,9 @@ function animalNamed(name: string): AnimalRead {
   const match = ROSTER.find((animal) => animal.Name === name);
 
   if (!match) {
-    throw new Error(`No animal named "${name}" in the canonical roster fixture`);
+    throw new Error(
+      `No animal named "${name}" in the canonical roster fixture`,
+    );
   }
 
   return match;
@@ -288,7 +290,9 @@ function cancelButton(page: Page): Locator {
  * "Notifications" — an error would be `role="alert"` and would not match.
  */
 function confirmationToast(page: Page): Locator {
-  return page.getByRole('region', { name: /notification/i }).getByRole('status');
+  return page
+    .getByRole('region', { name: /notification/i })
+    .getByRole('status');
 }
 
 /**

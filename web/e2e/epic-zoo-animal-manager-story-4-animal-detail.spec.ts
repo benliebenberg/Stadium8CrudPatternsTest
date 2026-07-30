@@ -107,7 +107,9 @@ function animalNamed(name: string): AnimalRead {
   const match = ROSTER.find((animal) => animal.Name === name);
 
   if (!match) {
-    throw new Error(`No animal named "${name}" in the canonical roster fixture`);
+    throw new Error(
+      `No animal named "${name}" in the canonical roster fixture`,
+    );
   }
 
   return match;
@@ -190,9 +192,7 @@ async function expectNotFoundState(page: Page, path: string): Promise<void> {
   const main = page.getByRole('main');
 
   await expect(page).toHaveURL(path);
-  await expect(
-    page.getByRole('heading', { name: /not found/i }),
-  ).toBeVisible();
+  await expect(page.getByRole('heading', { name: /not found/i })).toBeVisible();
 
   // No record fields — the whole point of AC-5 is that this is not a row of blanks. With
   // the description-list contract, zero `<dt>` means zero field rows; the label checks
