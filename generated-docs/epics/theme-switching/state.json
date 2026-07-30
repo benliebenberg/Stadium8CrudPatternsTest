@@ -14,9 +14,16 @@
       "Look at the plain outlined buttons in BOTH themes - Retry, Cancel, Edit animal. They are filled with the same colour as the page behind them, so only a very faint hairline says where the button is (1.38:1 in light, 1.24:1 in dark, against a 3:1 standard). It is equally faint in dark - slightly worse there - so light did not break it, and the hairline comes from a shared colour used by every outlined button. Changing it is a design decision for you, not a light-only patch.",
       "The automated accessibility scan walks five normal screens. It does NOT cover the loading / nothing-here-yet / no-matches / failed-to-load / not-found / refused-save states, which is exactly what story 5 was about. Those were checked by measurement and by eye this once, but a future colour regression in one of them would only be caught by eye."
     ],
-    "manualTestResults": []
+    "manualTestResults": [
+      {
+        "story": "all",
+        "test": "Full manual checklist (30 checks + 4 judgement calls)",
+        "passed": true,
+        "note": "All 34 passed, confirmed by the project owner on 2026-07-30. The four judgement calls - faint outline-button borders in both themes, light rendering with JavaScript disabled, no cross-tab sync, and the axe scan not covering the non-default states - were reviewed and accepted as-is."
+      }
+    ]
   },
-  "phase": "MANUAL-TEST",
+  "phase": "COMPLETE-ON-BRANCH",
   "stories": {
     "1": {
       "status": "complete",
@@ -55,5 +62,5 @@
     }
   },
   "halt": null,
-  "lastUpdated": "2026-07-30T18:05:00.000Z"
+  "lastUpdated": "2026-07-30T18:30:00.000Z"
 }
