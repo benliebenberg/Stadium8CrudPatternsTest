@@ -23,3 +23,17 @@ A plain-language log of what was built and why, story by story.
 - One thing deliberately not built: if you have the app open in two tabs and change the theme in one, the
   other tab won't update until it reloads. Nothing asked for that, and adding cross-tab syncing would
   mean another listener with no test behind it.
+
+## Story 2 — Choose Light, Dark or System from the nav bar
+
+- The Light/Dark/System control is now in the nav bar, next to Animals and Habitats. It reads and writes
+  the theme through the state story 1 built, so a pick takes effect straight away without the page
+  reloading, and picking System genuinely hands control back to the computer by forgetting the stored
+  choice.
+- Adding the menu turned up a real trap. The component library's generated dropdown mounts its menu on
+  the page's `<body>`, away from where it is written. That is invisible in a browser, but our automated
+  tests render the whole app shell inside a test container, and with the menu mounted outside that
+  container the test run **froze solid** the moment the menu opened — no error, no timeout, just a hang.
+  We traced it by bisecting the component tree, then changed the generated dropdown to render its menu
+  in place. Both test layers now pass, and the change is recorded with a note about what to do if a
+  future menu ever needs to escape a clipping container.
