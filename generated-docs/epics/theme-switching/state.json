@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "epic": {
+    "slug": "theme-switching",
+    "name": "Light and Dark Themes",
+    "createdAt": "2026-07-30T11:29:48.667Z",
+    "dependsOn": [
+      "zoo-animal-manager"
+    ],
+    "introducesSharedSurface": false,
+    "unverifiedAssumptions": [],
+    "manualTestResults": []
+  },
+  "phase": "PLAN",
+  "stories": {},
+  "halt": null,
+  "lastUpdated": "2026-07-30T11:29:48.667Z"
+}
