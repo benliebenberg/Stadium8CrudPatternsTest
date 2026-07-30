@@ -9,9 +9,9 @@ A frontend over the Linx 6 `CrudPatterns` REST API. The backend exposes full CRU
 Animals and a read-only list of Habitats, protected by a single shared API key that the
 Next.js server tier holds and injects — the browser never calls Linx directly.
 
-**Built as one epic.** An earlier version of this plan split the work across four sequential
-epics (`animal-list`, `animal-detail`, `habitat-reference`, `animal-management`). At the
-stories approval the user chose to build the whole product as a single epic broken into
+**The product shipped as one epic.** An earlier version of this plan split the work across four
+sequential epics (`animal-list`, `animal-detail`, `habitat-reference`, `animal-management`). At
+the stories approval the user chose to build the whole product as a single epic broken into
 stories instead, so those four briefs were superseded and removed. The trade-off accepted:
 one manual-test session and one pull request at the end, rather than four incremental merges.
 
@@ -20,9 +20,12 @@ one manual-test session and one pull request at the end, rather than four increm
 | # | Epic | Delivers | Builds on |
 |---|---|---|---|
 | 1 | Zoo Animal Manager (`zoo-animal-manager`) | A complete animal-management app — browse and search animals, view one animal's full record, browse habitats, and add, edit or remove animals. | — |
+| 2 | Light and Dark Themes (`theme-switching`) | Choose Light, Dark or System from the nav bar, and a light theme that is genuinely good — every screen and state checked and fixed. | Zoo Animal Manager (`zoo-animal-manager`) |
 
-The build sequence *within* the epic is layered, and the brief records it explicitly:
+The build sequence *within* epic 1 is layered, and its brief records it explicitly:
 Foundation → Shell + List → Detail → Habitats → Writes.
+
+Epic 2 reskins what epic 1 built; it changes no functionality and no backend behaviour.
 
 ## Coverage
 
@@ -56,6 +59,40 @@ Everything in the spec is assigned to an epic:
 | Explain a failed save in plain words (R24) | Zoo Animal Manager |
 
 _24 requirements, all assigned._
+
+### Epic 2 — Light and Dark Themes
+
+Added after epic 1 shipped, at the user's request. Light-theme token values already existed from
+epic 1's styling pass but had never rendered, because `layout.tsx` hardcoded the dark class — so
+this epic is as much about *proving* the light theme as about the toggle itself.
+
+| What you asked for | Epic |
+|---|---|
+| Choose Light, Dark or follow the system (T1) | Light and Dark Themes (`theme-switching`) |
+| First visit respects the machine's setting (T2) | Light and Dark Themes (`theme-switching`) |
+| No flash of the wrong theme (T3) | Light and Dark Themes (`theme-switching`) |
+| The control is usable by keyboard and screen reader (T4) | Light and Dark Themes (`theme-switching`) |
+| Every screen looks right in light (T5) | Light and Dark Themes (`theme-switching`) |
+| Every state looks right in light (T6) | Light and Dark Themes (`theme-switching`) |
+| Notifications use the theme's colours (T7) | Light and Dark Themes (`theme-switching`) |
+| Accessible contrast in both themes, not just dark (T8) | Light and Dark Themes (`theme-switching`) |
+
+_8 requirements, all assigned._
+
+**Decisions taken when this epic was set up:**
+
+- **Light / Dark / System**, not a two-way flip. First visit follows `prefers-color-scheme`; an
+  explicit choice is remembered per browser; "System" returns to following the OS and tracks
+  changes to it live. The app never overrides a preference someone already expressed at OS level.
+- **An icon control on the right of the existing nav bar** — present on every screen, and the
+  shared shell already exists so it costs little.
+- **A full light audit, not just the toggle.** Every screen and every state gets looked at and
+  fixed, and the accessibility scan runs in both themes. Nothing in this app had ever rendered in
+  light, so the theme was defined but unproven.
+
+**Out of scope:** per-user or server-side theme persistence (there is no login and no user store),
+any change to the brand palette or fonts, additional themes beyond light and dark, re-designing any
+screen, and any change to the animal/habitat functionality or the backend.
 
 ## Decisions taken at intake
 

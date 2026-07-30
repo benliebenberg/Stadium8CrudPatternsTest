@@ -121,15 +121,28 @@ Every write to `/v1/animals` (`POST`, `PUT`, `DELETE`) requires a `LastChangedUs
 | Field | Value |
 |---|---|
 | Primary brand color | `#ff6b01` (Digiata orange) |
-| Accent / secondary | `#ff8c3a` (hover), `#ad4800` (pressed / dark variant) |
-| Background (light) | N/A — dark-first; see §Accessibility hard rule below if a light surface is ever introduced |
-| Background (dark, if applicable) | `#090909` (page background) |
+| Accent / secondary | `#ff8c3a` (hover), `#ad4800` (pressed / dark variant, also the safe light-theme substitute) |
+| Background (light) | `#fff9ec` (cream page background, `:root`) |
+| Background (dark, if applicable) | `#090909` (page background, `.dark`) |
 | Font family (headings) | Space Grotesk (`--font-secondary`) — open substitute for the brand's licensed `Roobert` |
 | Font family (body) | Inter (`--font-primary`) — open substitute for the brand's licensed `Sequel Sans Book Disp` |
-| Theme | **dark-first** — dark is the primary/default theme; light is a secondary nice-to-have, not an acceptance criterion for any epic |
+| Theme | **Both light and dark are supported, first-class themes**, each with its own acceptance criteria. Dark remains the *default* look and is the brand's own presentation (`digiata.com` renders dark) — but light is a genuine, tested theme, not a fallback or a nice-to-have. See "Theme selection" below for the current implementation gap. |
 | Source | live-site harvest — computed styles and CSS custom properties read from `https://www.digiata.com/` during INTAKE on 2026-07-29 |
 
 > `[INFERRED]` Palette, typography, and full token set harvested directly from the brand site (not approximated) — see the complete token tables below. All values here are **authoritative** for `design-style-agent`, which must emit them as CSS custom properties in `web/src/app/globals.css`. **No hex literal may appear in any component file** — every value below becomes a token per [styling-centralisation.md](.claude/policies/styling-centralisation.md); components reference tokens by name only (`bg-primary`, `text-foreground`, `var(--color-brand-primary)`, etc.).
+
+### Theme selection — Light / Dark / System
+
+The person using the app chooses their theme: **Light**, **Dark**, or **System**. Behaviour:
+
+- **First visit (no stored preference):** follow the operating system's `prefers-color-scheme` media query. Do not default to dark regardless of OS preference — that would override a preference the person has already expressed at the OS level without them asking for it.
+- **Explicit choice:** once the person picks Light or Dark via the in-app toggle, remember that choice per browser (e.g. `localStorage`) and apply it on every subsequent visit, regardless of what the OS preference does afterwards.
+- **"System":** returns the app to following the OS preference live — including reacting to the OS preference changing while the app is open, if the person hasn't since made an explicit choice.
+- **Never silently override an expressed preference.** The only two ways the active theme changes are: the person choosing Light/Dark/System in the app, or (while on "System") the OS preference itself changing.
+
+> **Known gap — light theme is defined but unproven.** The light-theme token values already exist in `web/src/styles/design-tokens.css` under `:root` (dark lives under `.dark`), produced during the epic-1 styling pass. They have never actually been rendered in the browser, because `web/src/app/layout.tsx` hardcodes `className="dark"` on `<html>` unconditionally — there is no toggle, no `prefers-color-scheme` read, and no stored-preference mechanism yet. This is the main risk in bringing light mode live: the token values are believed correct (see contrast table below) but have not been visually verified end-to-end. Building the toggle, the OS-preference read, and the stored-preference mechanism — and then visually verifying the light theme for the first time — is epic-scoped work, not a documentation change.
+
+> **Known gap — toast styling is not on tokens.** `web/src/components/toast/Toast.tsx` and `ToastContainer.tsx` style themselves with raw Tailwind colour utilities (`bg-white`, `border-red-500`, `text-green-500`, `text-gray-900`) rather than the design tokens (`--card`, `--destructive`, `--success`, `--warning`) — logged as cross-epic debt in `generated-docs/architecture.md`. This is invisible while the app is permanently dark, but it means notifications will almost certainly render with wrong/clashing colours in light mode (e.g. a white toast card on an already-white/cream light background, or dark-theme-tuned status colours that fail contrast on cream). Re-skinning the toast components onto the token set is part of making light mode real, not an optional polish item.
 
 ### Brand colours
 
@@ -155,17 +168,19 @@ Every write to `/v1/animals` (`POST`, `PUT`, `DELETE`) requires a `LastChangedUs
 | `--color-neutral-light-10` | `#fff9ec1a` | 10% cream — subtle overlay / hairline |
 | `--color-neutral-light-5` | `#fff9ec0d` | 5% cream — subtlest overlay |
 
-### Semantic roles (dark-first — derive in `globals.css` from the ramp above)
+### Semantic roles (both themes — derive in `globals.css` from the ramp above)
 
-| Role | Token value |
-|---|---|
-| Background | `#090909` |
-| Surface / card | `#181818`; raised surface `#282828` |
-| Border / divider | `#333333` (or `--color-neutral-light-10` for hairlines) |
-| Text — primary | `#fff9ec` |
-| Text — muted | `#a8a8a8` |
-| Accent / action | `#ff6b01`; hover `#ff8c3a`; pressed `#ad4800` |
-| Text ON accent (filled buttons) | `#090909` — **never cream** on a filled-orange surface |
+Dark (`.dark`) is the default theme; light (`:root`) is the equally-supported alternative the person can switch to. Both sets already exist in `web/src/styles/design-tokens.css`.
+
+| Role | Dark (`.dark`, default) | Light (`:root`) |
+|---|---|---|
+| Background | `#090909` | `#fff9ec` |
+| Surface / card | `#181818`; raised surface `#282828` | `#ffffff` (card / popover) |
+| Border / divider | `#333333` (or `--color-neutral-light-10` for hairlines) | `#dad6cb` |
+| Text — primary | `#fff9ec` | `#090909` |
+| Text — muted | `#a8a8a8` | `#6b6558` |
+| Accent / action | `#ff6b01`; hover `#ff8c3a`; pressed `#ad4800` | `#ad4800` (no full-brightness orange — see hard rule below) |
+| Text ON accent (filled buttons) | `#090909` — **never cream** on a filled-orange surface | `#fff9ec` on the `#ad4800` fill |
 
 ### Typography
 
@@ -215,7 +230,9 @@ Tailwind's own finer-grained spacing utilities remain available for sub-1rem gap
 
 ### Accessibility — verified contrast ratios (constraints, not suggestions)
 
-Measured against the actual token values:
+Measured against the actual token values. The accessibility scan runs in **both** themes now that light is a first-class, tested theme — not just against dark.
+
+**Dark theme (`.dark`, default):**
 
 | Pair | Ratio | Result | Use |
 |---|---|---|---|
@@ -224,9 +241,25 @@ Measured against the actual token values:
 | Orange `#ff6b01` on bg `#090909` | 6.9:1 | AA | Usable as link/accent **text** on dark |
 | Ink `#090909` on orange fill | 6.9:1 | AA | Correct text colour for a filled orange button |
 
-> **HARD RULE:** orange `#ff6b01` on cream `#fff9ec` = **2.7:1** — fails AA for both normal and large text. If a light surface is ever introduced (a light theme, a white card, a printable view), the orange must **not** be used for text or icons on it — use `--color-brand-primary-dark` (`#ad4800`) or the ink neutral instead. Dark-first is what makes the orange safe on this palette; that safety does not transfer to a light surface.
+**Light theme (`:root`):**
 
-> **Status/feedback colours are a BUILD decision, not a harvested value.** Digiata's palette is single-accent and has no success/warning/destructive colours. This app needs them (delete confirmations, duplicate-name warnings, save failures). `design-style-agent` must define accessible success/warning/destructive tokens that sit harmoniously with the warm neutral ramp and hit ≥4.5:1 on `#090909` — and must **not** reuse the brand orange for destructive actions, since orange reads as the primary action in this palette and a destructive-orange delete button would be genuinely dangerous.
+| Pair | Ratio | Result | Use |
+|---|---|---|---|
+| Ink `#090909` on bg `#fff9ec` | 19.0:1 | AAA | Primary text — excellent |
+| Muted `#6b6558` on bg `#fff9ec` | 5.5:1 | AA | Secondary text — safe |
+| Cream `#fff9ec` on primary fill `#ad4800` | 5.4:1 | AA | Correct text colour for a filled-primary button on light |
+
+> **HARD RULE — already honoured in the light tokens and must stay that way:** orange `#ff6b01` on cream `#fff9ec` = **2.7:1**, which **fails WCAG AA for all text sizes**. Therefore, on any light surface the orange must **not** be used for text or icons. `--primary` under `:root` is already set to `#ad4800` (the safe darker substitute) precisely because of this — that is a **deliberate** choice, not a mistake, and must **not** be "corrected" back to `#ff6b01`. Orange remains fine as a **fill** with near-black `#090909` text on it, in either theme. On dark, orange as text is fine (6.9:1) — that safety simply does not transfer to light.
+
+> **Status/feedback colours — both themes already exist.** Digiata's palette is single-accent and has no harvested success/warning/destructive colours, so these are a BUILD decision, recorded here for both themes:
+>
+> | Role | Dark (`.dark`) | Ratio | Light (`:root`) | Ratio |
+> |---|---|---|---|---|
+> | Destructive | `#ff5c5c` | 6.6:1 AA | `#c93a3e` | 4.8:1 AA |
+> | Success | `#7cb342` | 8.0:1 AAA | `#4d7c22` | 4.7:1 AA |
+> | Warning | `#c9a227` | 8.2:1 AAA | `#8a6d1a` | 4.7:1 AA |
+>
+> The light variants are deliberately darker than their dark-theme counterparts, since they sit on cream (`#fff9ec`) rather than near-black (`#090909`). In **either** theme, the destructive colour must **never** be the brand orange — orange reads as the primary action in this palette, and a destructive-orange delete button would be genuinely dangerous.
 
 ### Provenance
 
