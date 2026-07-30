@@ -61,8 +61,27 @@
  *
  * Only a `Success` navigates. Anything else keeps the user on the form with every value they
  * typed, and re-enables the submit control so the same values can be sent again (R20/R24).
- * Story 8 refines *how* the two refusals read — a duplicate name against the Name field versus a
- * readable technical failure — on top of this mechanism.
+ *
+ * ## The two refusals are different kinds of thing, so they are reported differently
+ *
+ * `Warning` and `Error` arrive in the *same* envelope with the *same* status and differ only by
+ * `MessageType`, but they mean opposite things to the person at the keyboard — so they are
+ * deliberately not given one shared "something went wrong" treatment (R20/R24):
+ *
+ * - **`Warning` — a business rejection, e.g. a name that is already taken.** Fixable, so it is
+ *   reported the way every other fixable entry problem on this form is: against the offending
+ *   entry, marked (`aria-invalid`) with the message wired as that control's accessible
+ *   description. That is `setError()` through the same `FormControl`/`FormMessage` wiring
+ *   validation uses — no second error mechanism, and no failure banner, which would tell the
+ *   user the system broke when in fact their next keystroke fixes it.
+ * - **`Error` — a technical failure.** Nothing the user typed caused it, so no entry is marked:
+ *   accusing the Name would send them editing a perfectly good value. It is reported at form
+ *   level instead, readable wording first and the backend's own raw text kept below it as
+ *   secondary detail (Critical Rule 3 / R24) — `Messages[0]` here is database text such as a
+ *   constraint violation, which nobody should have to read to learn their animal was not saved.
+ *
+ * The uniqueness rule itself is the **backend's**. This form implements no duplicate check of
+ * its own and only ever learns of one from a `Warning` envelope.
  */
 
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -116,16 +135,33 @@ const HABITATS_LOADING_LABEL =
   'Loading the habitats this animal can be assigned to';
 
 /**
- * What the user reads when the backend refuses the save.
+ * What the user reads when the save failed for technical reasons (`MessageType: 'Error'`, or no
+ * answer at all).
  *
  * Readable first, deliberately: a technical failure carries raw database text in its message
  * (BR11), and nobody should have to read a constraint violation to learn their animal was not
  * saved. The backend's own words follow as secondary detail rather than being swallowed
  * (Critical Rule 3 / R24) — they are what makes a bug report useful.
  */
-const SAVE_REFUSED_TITLE = 'This animal could not be saved';
-const SAVE_REFUSED_HINT =
+const SAVE_FAILED_TITLE = 'This animal could not be saved';
+const SAVE_FAILED_HINT =
   'Everything you entered is still here, so you can try again.';
+/** Introduces the backend's own words, so their change of register is not a surprise. */
+const SAVE_FAILED_DETAIL_LABEL = 'What the animal backend reported:';
+
+/**
+ * The entry a business rejection (`MessageType: 'Warning'`) is reported against.
+ *
+ * The only rejection this backend raises is its duplicate-record path, and the rule behind it is
+ * understood to be the animal's **name** — an assumption recorded for confirmation against the
+ * running backend rather than one this form can verify. It is deliberately the single mapping
+ * used: parsing the backend's wording to guess at other fields would invent a contract the API
+ * does not describe.
+ */
+const REJECTED_ENTRY = 'Name' as const;
+
+/** What to do about a rejected name, in the app's words, after the backend's own. */
+const REJECTION_GUIDANCE = 'Choose a different name and save again.';
 
 /** A stable identity for "no habitats yet", so the picker does not re-render on every keystroke. */
 const NO_HABITATS: readonly HabitatRead[] = [];
@@ -198,6 +234,24 @@ function unansweredWriteDetail(error: unknown): string {
   return BACKEND_UNREACHABLE_MESSAGE;
 }
 
+/**
+ * The backend's own words with a full stop, so the app's guidance can follow them as a second
+ * sentence. Nothing is reworded or truncated — a rejection the user can act on has to say what
+ * the backend said (R20).
+ */
+function asSentence(text: string): string {
+  return /[.!?]$/.test(text) ? text : `${text}.`;
+}
+
+/**
+ * What the Name entry says when the backend rejected the save as a duplicate: the backend's
+ * wording, then what to do about it. Unlike a technical failure, this message IS readable as it
+ * stands — "Animal already exists" is a sentence a person can act on.
+ */
+function rejectionMessage(messages: readonly string[]): string {
+  return `${asSentence(messages.join(' '))} ${REJECTION_GUIDANCE}`;
+}
+
 export function AnimalForm({
   submitLabel,
   initialValues = EMPTY_ANIMAL_FORM,
@@ -220,8 +274,13 @@ export function AnimalForm({
   /** Open write, closed form: the submit control is disabled while a save is in flight (NFR-2). */
   const [saving, setSaving] = useState(false);
 
-  /** The backend's own words when it refused, or `null` while nothing has been refused. */
-  const [refusal, setRefusal] = useState<readonly string[] | null>(null);
+  /**
+   * The backend's own words when the save FAILED technically, or `null` while it has not.
+   *
+   * A business rejection is not held here: it lives on the entry it belongs to, as that field's
+   * own error (see the `rejected` branch below).
+   */
+  const [failure, setFailure] = useState<readonly string[] | null>(null);
 
   const form = useForm<AnimalFormValues>({
     resolver: zodResolver(animalFormSchema),
@@ -242,7 +301,7 @@ export function AnimalForm({
    */
   const sendAnimal = async (values: AnimalFormValues): Promise<void> => {
     setSaving(true);
-    setRefusal(null);
+    setFailure(null);
 
     try {
       const result = interpretWriteResponse(
@@ -258,9 +317,23 @@ export function AnimalForm({
         return;
       }
 
-      setRefusal(result.messages);
+      if (result.outcome === 'rejected') {
+        // A fixable business rejection, so it belongs to the entry it is about — exactly as a
+        // validation message does. `handleSubmit` replaces the form's errors from the resolver
+        // on the next submit, so this clears itself when the user tries again, and the default
+        // onChange revalidation clears it as soon as they edit the name.
+        form.setError(REJECTED_ENTRY, {
+          type: 'backend',
+          message: rejectionMessage(result.messages),
+        });
+      } else {
+        // A technical failure: form level, accusing no entry.
+        setFailure(result.messages);
+      }
     } catch (error) {
-      setRefusal([unansweredWriteDetail(error)]);
+      // No answer at all — the one case a write rejects rather than resolving. Still a technical
+      // failure as far as the user is concerned.
+      setFailure([unansweredWriteDetail(error)]);
     }
 
     setSaving(false);
@@ -275,15 +348,20 @@ export function AnimalForm({
         onSubmit={form.handleSubmit(sendAnimal)}
         className="flex flex-col gap-6"
       >
-        {refusal !== null && (
+        {/* A technical failure only. A duplicate name never reaches here — it is the Name
+        entry's own message, because it is the user's to fix rather than a system fault. */}
+        {failure !== null && (
           <Alert variant="destructive">
             <AlertTitle className="line-clamp-none">
-              {SAVE_REFUSED_TITLE}
+              {SAVE_FAILED_TITLE}
             </AlertTitle>
             <AlertDescription>
-              <p>{SAVE_REFUSED_HINT}</p>
-              {/* The backend's own text, kept where it can be quoted in a bug report. */}
-              <p>{refusal.join(' ')}</p>
+              <p>{SAVE_FAILED_HINT}</p>
+              {/* The backend's own text, second and labelled as such: not what the user reads
+              first, and not swallowed either (Critical Rule 3 / R24). */}
+              <p>
+                {SAVE_FAILED_DETAIL_LABEL} {failure.join(' ')}
+              </p>
             </AlertDescription>
           </Alert>
         )}
