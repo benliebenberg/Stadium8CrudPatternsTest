@@ -17,72 +17,72 @@
     ],
     "manualTestResults": []
   },
-  "phase": "EPIC-END",
+  "phase": "MANUAL-TEST",
   "stories": {
     "1": {
       "status": "complete",
       "commit": null,
-      "e2eStatus": "deferred",
+      "e2eStatus": "passed",
       "startedAt": "2026-07-30T09:05:00.000Z",
       "completedAt": "2026-07-30T09:32:00.000Z"
     },
     "2": {
       "status": "complete",
       "commit": null,
-      "e2eStatus": "deferred",
+      "e2eStatus": "passed",
       "startedAt": "2026-07-30T10:05:00.000Z",
       "completedAt": "2026-07-30T10:48:00.000Z"
     },
     "3": {
       "status": "complete",
       "commit": null,
-      "e2eStatus": "deferred",
+      "e2eStatus": "passed",
       "startedAt": "2026-07-30T10:50:00.000Z",
       "completedAt": "2026-07-30T11:22:00.000Z"
     },
     "4": {
       "status": "complete",
       "commit": null,
-      "e2eStatus": "deferred",
+      "e2eStatus": "passed",
       "startedAt": "2026-07-30T11:24:00.000Z",
       "completedAt": "2026-07-30T11:58:00.000Z"
     },
     "5": {
       "status": "complete",
       "commit": null,
-      "e2eStatus": "deferred",
+      "e2eStatus": "passed",
       "startedAt": "2026-07-30T12:00:00.000Z",
       "completedAt": "2026-07-30T12:26:00.000Z"
     },
     "6": {
       "status": "complete",
       "commit": null,
-      "e2eStatus": "deferred",
+      "e2eStatus": "passed",
       "startedAt": "2026-07-30T12:28:00.000Z",
       "completedAt": "2026-07-30T13:02:00.000Z"
     },
     "7": {
       "status": "complete",
       "commit": null,
-      "e2eStatus": "deferred",
+      "e2eStatus": "passed",
       "startedAt": "2026-07-30T13:04:00.000Z",
       "completedAt": "2026-07-30T13:38:00.000Z"
     },
     "8": {
       "status": "complete",
       "commit": null,
-      "e2eStatus": "deferred",
+      "e2eStatus": "passed",
       "startedAt": "2026-07-30T13:40:00.000Z",
       "completedAt": "2026-07-30T14:00:00.000Z"
     },
     "9": {
       "status": "complete",
       "commit": null,
-      "e2eStatus": "deferred",
+      "e2eStatus": "passed",
       "startedAt": "2026-07-30T14:02:00.000Z",
       "completedAt": "2026-07-30T14:32:00.000Z"
     }
   },
   "halt": null,
-  "lastUpdated": "2026-07-30T08:12:00.000Z"
+  "lastUpdated": "2026-07-30T15:10:00.000Z"
 }
