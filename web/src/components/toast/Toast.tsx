@@ -4,6 +4,18 @@
  * Toast - Individual toast notification component
  * Provides feedback for operations with success, error, info, and warning variants
  * Auto-dismisses after specified duration and supports manual dismissal
+ *
+ * Colours come exclusively from the semantic design tokens (`--card`,
+ * `--card-foreground`, `--muted-foreground`, `--border`, `--destructive`,
+ * `--success`, `--warning`), so a notification follows whichever theme is active
+ * (`.claude/policies/styling-centralisation.md`). No raw Tailwind palette class and no
+ * hex literal may re-enter this file.
+ *
+ * `getAriaRole()` / `getAriaLive()` are a BEHAVIOURAL contract pinned by epic 1
+ * (`epic-zoo-animal-manager-story-9-remove-animal.test.tsx` locates a failed removal by
+ * `role="alert"`) and re-pinned by this epic's story-3 regression harness: `error`
+ * announces assertively, every other variant politely. They are not styling and must not
+ * be folded into the variant colour switches below.
  */
 
 import { useEffect } from 'react';
@@ -27,7 +39,7 @@ export function Toast({ toast, onDismiss }: ToastProps) {
       case 'success':
         return (
           <svg
-            className="w-5 h-5 text-green-500"
+            className="w-5 h-5 text-success"
             xmlns="http://www.w3.org/2000/svg"
             viewBox="0 0 20 20"
             fill="currentColor"
@@ -42,7 +54,7 @@ export function Toast({ toast, onDismiss }: ToastProps) {
       case 'error':
         return (
           <svg
-            className="w-5 h-5 text-red-500"
+            className="w-5 h-5 text-destructive"
             xmlns="http://www.w3.org/2000/svg"
             viewBox="0 0 20 20"
             fill="currentColor"
@@ -57,7 +69,7 @@ export function Toast({ toast, onDismiss }: ToastProps) {
       case 'warning':
         return (
           <svg
-            className="w-5 h-5 text-amber-500"
+            className="w-5 h-5 text-warning"
             xmlns="http://www.w3.org/2000/svg"
             viewBox="0 0 20 20"
             fill="currentColor"
@@ -72,7 +84,7 @@ export function Toast({ toast, onDismiss }: ToastProps) {
       case 'info':
         return (
           <svg
-            className="w-5 h-5 text-blue-500"
+            className="w-5 h-5 text-muted-foreground"
             xmlns="http://www.w3.org/2000/svg"
             viewBox="0 0 20 20"
             fill="currentColor"
@@ -87,17 +99,19 @@ export function Toast({ toast, onDismiss }: ToastProps) {
     }
   };
 
-  // Border color based on variant
+  // Accent colour of the leading edge, per variant. Scoped to `border-l-*` so it tints only
+  // the 4px accent and leaves the card's hairline on `--border`.
+  // `error` takes `--destructive`, never the brand orange `--primary`, in either theme.
   const getBorderColor = () => {
     switch (toast.variant) {
       case 'success':
-        return 'border-green-500';
+        return 'border-l-success';
       case 'error':
-        return 'border-red-500';
+        return 'border-l-destructive';
       case 'warning':
-        return 'border-amber-500';
+        return 'border-l-warning';
       case 'info':
-        return 'border-blue-500';
+        return 'border-l-muted-foreground';
     }
   };
 
@@ -121,7 +135,8 @@ export function Toast({ toast, onDismiss }: ToastProps) {
   return (
     <div
       className={`
-        bg-white rounded-lg shadow-lg border-l-4 ${getBorderColor()} p-4
+        bg-card text-card-foreground rounded-lg shadow-lg
+        border border-border border-l-4 ${getBorderColor()} p-4
         flex items-start gap-3 pointer-events-auto
         animate-in slide-in-from-right fade-in duration-300
         ${toast.onClick ? 'cursor-pointer hover:shadow-xl transition-shadow' : ''}
@@ -136,9 +151,11 @@ export function Toast({ toast, onDismiss }: ToastProps) {
 
       {/* Content */}
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-gray-900">{toast.title}</p>
+        <p className="text-sm font-semibold text-card-foreground">
+          {toast.title}
+        </p>
         {toast.message && (
-          <p className="text-sm text-gray-600 mt-1">{toast.message}</p>
+          <p className="text-sm text-muted-foreground mt-1">{toast.message}</p>
         )}
       </div>
 
@@ -149,7 +166,7 @@ export function Toast({ toast, onDismiss }: ToastProps) {
             e.stopPropagation();
             onDismiss(toast.id);
           }}
-          className="text-gray-400 hover:text-gray-600 flex-shrink-0 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 rounded"
+          className="text-muted-foreground hover:text-card-foreground flex-shrink-0 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring focus:ring-offset-card rounded"
           aria-label="Dismiss notification"
         >
           <svg

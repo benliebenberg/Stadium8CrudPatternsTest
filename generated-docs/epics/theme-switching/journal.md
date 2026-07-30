@@ -37,3 +37,22 @@ A plain-language log of what was built and why, story by story.
   We traced it by bisecting the component tree, then changed the generated dropdown to render its menu
   in place. Both test layers now pass, and the change is recorded with a note about what to do if a
   future menu ever needs to escape a clipping container.
+
+## Story 3 — Notifications follow the active theme
+
+- Notifications now take their colours from the active theme instead of having them hardcoded. Previously
+  every save or removal message was a white card with grey text — near-invisible while the app was
+  permanently dark, and out of place on the new cream light theme. The card, its text, its border and the
+  coloured stripe down its left edge all now follow whichever theme is on.
+- The error stripe uses the theme's dedicated error red in both light and dark, and never the brand
+  orange. Success is green, warning is gold, and informational messages get a plain neutral stripe rather
+  than the orange used for buttons — so a notification's colour can't be misread as "this is something to
+  click".
+- Deleted a leftover block of template code that listed a second, conflicting set of notification colours.
+  Nothing was using it, and leaving it there would have invited someone to wire up the wrong colours later.
+- Nothing about how notifications behave changed: failures still interrupt a screen reader, everything else
+  still waits its turn, messages still clear themselves after five seconds, and dismiss works as before.
+- Worth knowing: because nothing at any test layer asserts colour here by design, a styling class that
+  silently failed to generate would have left the stripe invisible with all 107 tests green. That gap was
+  closed against the compiled stylesheet rather than by eye — including checking the rule order, since an
+  all-sides border colour would have overwritten the left stripe and quietly turned it grey.
