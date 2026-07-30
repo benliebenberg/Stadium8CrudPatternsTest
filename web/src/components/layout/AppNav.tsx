@@ -3,11 +3,15 @@
 /**
  * The app shell's section navigation — Animals and Habitats, the only two sections this app
  * has (there is no sign-in, account or sign-out surface anywhere: project.md §Authentication,
- * brief BR15).
+ * brief BR15) — plus the theme control that sits beside them.
  *
  * The current section is marked with `aria-current="page"`, which is what actually tells
  * assistive technology "you are here"; the background tint is the sighted equivalent, not the
  * signal. Colour alone would leave the state unperceivable to a screen-reader user.
+ *
+ * The theme control joins **this** landmark rather than adding a second one, and it is the
+ * only button here: the two sections stay links. Living in the shared shell is what makes one
+ * control reachable from every screen (NFR-4).
  *
  * A client component because the current section is read from the path.
  */
@@ -15,6 +19,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
+import { ThemeControl } from '@/components/layout/ThemeControl';
 import { Button } from '@/components/ui/button';
 import { ANIMALS_ROUTE, HABITATS_ROUTE } from '@/lib/routes';
 
@@ -68,6 +73,8 @@ export function AppNav() {
           </Button>
         );
       })}
+
+      <ThemeControl />
     </nav>
   );
 }

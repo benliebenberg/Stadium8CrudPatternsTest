@@ -28,6 +28,26 @@ function AlertDialogPortal({
   );
 }
 
+/**
+ * `bg-black/50` is deliberate and must NOT be "tokenised".
+ *
+ * It is the one raw colour left in this project's components, and it is correct: a modal scrim
+ * dims whatever is behind the dialog, so it has to be dark in BOTH themes. The obvious
+ * token-shaped substitutions are both wrong —
+ *
+ *   - `bg-foreground/50` inverts with the theme, so in dark it becomes a **cream** wash
+ *     (`--foreground: #fff9ec`) that lightens the page instead of dimming it;
+ *   - `bg-background/50` is cream in light and near-black in dark, i.e. no scrim at all in
+ *     light.
+ *
+ * There is no semantic scrim token in `design-tokens.css`, and adding one would mean two
+ * values that must both stay dark — which is what `black` already is. The styling gate
+ * (`.claude/policies/styling-centralisation.md`) matches numbered palette utilities
+ * (`bg-[a-z]+-\d{3}`), so this is not a gate violation either.
+ *
+ * The dialog's own surface is `bg-background`, which equals the page colour in both themes —
+ * this scrim plus the border and `shadow-lg` are what make it read as raised.
+ */
 function AlertDialogOverlay({
   className,
   ...props

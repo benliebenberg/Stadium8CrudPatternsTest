@@ -157,10 +157,10 @@ single-record read uses it rather than re-deciding.
 
 | What | Where | Note |
 |---|---|---|
-| Toast notifications | `web/src/contexts/ToastContext.tsx`, `web/src/components/toast/` | `useToast()` / `showToast({ variant, title, message })`. Use for every write confirmation and failure. Do not add a second notification system. |
+| Toast notifications | `web/src/contexts/ToastContext.tsx`, `web/src/components/toast/` | `useToast()` / `showToast({ variant, title, message })`. Use for every write confirmation and failure. Do not add a second notification system. Four variants — `success` / `error` / `warning` / `info`. **The announcement channel is a behavioural contract, not styling:** `error` → `role="alert"` + `aria-live="assertive"`, every other variant → `role="status"` + `aria-live="polite"` (`Toast.tsx`'s `getAriaRole()` / `getAriaLive()`), and epic 1's story-9 test locates a failed removal by `role="alert"`. Also pinned: `aria-label="Dismiss notification"` on the control, `aria-label="Notifications"` on the container region, and `ToastContainer` rendering **`null`** while there is nothing to announce (so a spec asserts the region's *absence*, never an empty region). **Colours are theme tokens only** — `--card` / `--card-foreground` surface, `--border` hairline, a `border-l-4` accent per variant (`--destructive` / `--success` / `--warning`, and `--muted-foreground` for `info` so no accent is ever the brand orange), `--muted-foreground` for the message and dismiss control. There is deliberately **no** variant→colour map in `types/toast.ts`; `Toast.tsx` is the single place a notification's colour is decided. |
 | `DefaultResponse` type | `web/src/types/api.ts` | **Canonical.** Not re-emitted in `api-generated.ts`. |
 | Validation helpers | `web/src/lib/validation/schemas.ts` | `validateRequest()` / `validateRequestAsync()` / `formFieldSchemas`, plus this project's own `animalFormSchema` / `AnimalFormValues` / `EMPTY_ANIMAL_FORM` / `animalWriteFromForm()` — the five-field write surface, its rules, and the string→number mapping to `Required<AnimalWrite>` — and `animalWriteSchema` / `AnimalWriteBody`, the **wire** shape the server tier validates (`Age`/`HabitatId` as integers, `Age` ≥ 0, `HabitatId` positive, unknown keys stripped): use that one for anything validating a request body, and `animalFormSchema` (five strings) for anything validating what a person typed — and `animalFormFromRecord(animal)`, the mirror mapping that turns a stored `AnimalRead` into the five string entries an edit form starts from (a missing field becomes an empty entry, refused on save rather than written back). The template's email/password/userId schemas are unused by this project. |
-| Shadcn primitives | `web/src/components/ui/` | Present: `button`, `card`, `input`, `label`, `table`, `skeleton`, `alert`, `select`, `form`, `alert-dialog`. Add others via the CLI (Critical Rule 1) — never hand-roll; `--yes` does NOT cover the "file already exists, overwrite?" prompt a dependency triggers, so pipe `yes n |` and re-format the output with `prettier --write` (the CLI's output is not Prettier-formatted and `format:check` gates it). Note `CardTitle` and `AlertDialogTitle` ship `font-semibold`; the brand uses weights 400/500 only, so override with `font-medium` if you use them. A Vitest file that opens `select` or an `alert-dialog` needs jsdom shims for `hasPointerCapture`/`setPointerCapture`/`releasePointerCapture`/`scrollIntoView`/`ResizeObserver` (Radix uses all five); `Label asChild` renders label typography on a `<span>` when the thing being named is a button rather than a labelable control. **`button`'s `destructive` variant diverges from the CLI default** — `text-destructive-foreground` instead of a hard-coded `text-white`, and no `dark:bg-destructive/60` (this app is permanently dark, so dimming the fill would mean the destructive token is never used, and a 60% fill drops the token foreground to ~3:1). Re-apply both if the CLI ever regenerates the file. |
+| Shadcn primitives | `web/src/components/ui/` | Present: `button`, `card`, `input`, `label`, `table`, `skeleton`, `alert`, `select`, `form`, `alert-dialog`, `dropdown-menu`. Add others via the CLI (Critical Rule 1) — never hand-roll; `--yes` does NOT cover the "file already exists, overwrite?" prompt a dependency triggers, so pipe `yes n |` and re-format the output with `prettier --write` (the CLI's output is not Prettier-formatted and `format:check` gates it). Note `CardTitle` and `AlertDialogTitle` ship `font-semibold`; the brand uses weights 400/500 only, so override with `font-medium` if you use them. A Vitest file that opens `select` or an `alert-dialog` needs jsdom shims for `hasPointerCapture`/`setPointerCapture`/`releasePointerCapture`/`scrollIntoView`/`ResizeObserver` (Radix uses all five); `Label asChild` renders label typography on a `<span>` when the thing being named is a button rather than a labelable control. **Three primitives diverge from the CLI default and must be re-applied if the CLI ever regenerates them.** (1) `button`'s `destructive` variant — `text-destructive-foreground` instead of a hard-coded `text-white`, and no `dark:bg-destructive/60`: a partial-opacity fill composites the token against the surface behind it and drops the paired foreground to ~3:1, so the verified destructive pair would never be the one on screen. (2) `alert`'s `destructive` variant — the description is `text-destructive`, not the CLI's `text-destructive/90`: that alpha reads 4.98:1 on the dark card but only **4.34:1** on the light one (`--card: #ffffff`), below the 4.5:1 AA floor, and it is the description of every failed read and every technically-failed save. **Any `/NN` alpha on a colour token needs checking against BOTH themes — light has far less headroom, because the light status tokens are already near their AA floor (4.7–4.8:1) while the dark ones sit at 6.6–8.2:1.** (3) `alert-dialog`'s overlay keeps **`bg-black/50`** — the one raw colour in this project's components, and deliberate: a scrim must dim in both themes, so `bg-foreground/50` (a cream wash in dark) and `bg-background/50` (no scrim in light) are both wrong, and there is no scrim token. Do not "tokenise" it. **`dropdown-menu`'s `DropdownMenuContent` also diverges — the CLI's `DropdownMenuPrimitive.Portal` wrapper is removed**, so the menu renders in place instead of on `document.body`. Unobservable in a browser (Radix Popper is `position: fixed`, and no ancestor of this app's chrome clips or repositions it), but load-bearing for Vitest: a test that renders `RootLayout` nests the app's own `<html>`/`<body>` inside RTL's container `<div>`, and with the content mounted outside that nested tree the opening `pointerup` never returns — no DOM call, no timer, no test-timeout, the run just hangs. Anything that later needs the content to escape a clipping ancestor must re-introduce the portal with a `container` **inside** the app's tree, never `document.body`. |
 
 ### Built in this project — reuse, don't rebuild
 
@@ -188,6 +188,9 @@ single-record read uses it rather than re-deciding.
 | Confirmed animal removal | `web/src/components/animals/RemoveAnimalAction.tsx` | `<RemoveAnimalAction animalId animalName onRemoved />` — the destructive-write counterpart to `AnimalForm`: owns the trigger **button** (never a link — an unrecoverable delete must not be reachable by URL), the Shadcn `AlertDialog` confirmation (names the animal and states in words that the removal cannot be undone, R22 — a generic "Are you sure?" is not a confirmation of anything), the browser-side `del(animalEndpoint(id))` with no body and no change-name, and the outcome branch off `interpretWriteResponse`. Only `Success` calls `onRemoved`; a `Warning` becomes a warning toast led by the backend's own sentence, an `Error`/unanswered write an error toast with readable wording first and the raw backend text as labelled detail — and **both refusals name the animal**, because the confirmation has closed by the time the toast is read. The confirm control is a plain `Button variant="destructive"` rather than `AlertDialogAction`, which would close the dialog before the backend answered; it is disabled in flight while Cancel stays live (no request timeout exists). Caller supplies only which animal and where a removed animal lands. |
 | Roster narrowing rules | `web/src/lib/animals/roster-filters.ts` | `habitatsInRoster(animals)` → the distinct `HabitatName`s the loaded roster occupies, sorted; `filterRoster(animals, { term, habitat })` → case-insensitive **substring** match on Name **or** Species, **intersected** with an exact habitat. Pure, React-free, fetch-free: narrowing is always derived state over the roster already in memory, never a request (BR6). |
 | Roster filter controls | `web/src/components/animals/RosterFilters.tsx` | Controlled search box (named by a real `<Label>`, `type="search"`) + Shadcn `Select` habitat filter named with `aria-labelledby` (a `<label for>` cannot name Radix's button trigger, whose content is the selected value) and an "All habitats" reset option. Choices are passed in — this component never fetches. **A habitat _filter_ derives its choices from the loaded roster; a habitat _picker_ in a create/edit form must read `/api/habitats` instead, or an unoccupied habitat could never be assigned.** |
+| Theme contract | `web/src/lib/theme/theme-preference.ts` + `theme-init-script.ts` | The single source for Decision 4: `THEME_STORAGE_KEY`, `LIGHT_THEME` / `DARK_THEME`, `DARK_THEME_CLASS`, `SYSTEM_DARK_MEDIA_QUERY`, plus `readStoredPreference()` / `writeStoredPreference()` (System **removes** the key), `systemPrefersDark()`, `subscribeToSystemDarkChanges()`, `resolveTheme(preference, prefersDark)` and `applyResolvedTheme()` — which writes the class **only when it is actually wrong**, because setting a `class` attribute to the value it already holds still notifies a `MutationObserver` and story 1's no-flash assertion reads exactly those notifications. `THEME_INIT_SCRIPT` is the inline `<head>` script source, with every contract value interpolated from the same constants. React-free and environment-neutral: safe to import from a server component, and total where `localStorage` throws or `matchMedia` is absent (jsdom). **Never hardcode the key, the stored values or the class.** |
+| Theme control | `web/src/components/layout/ThemeControl.tsx` | `<ThemeControl />` — the icon dropdown offering Light / Dark / System, mounted inside `AppNav`'s existing `<nav aria-label="Sections">` (the only button there; the two sections stay links). Named by `aria-label` because the icon is decorative, and the active choice is published as `aria-checked` by `DropdownMenuRadioGroup` — never a highlight or a bare tick. Reads and writes the theme only through `useTheme()`, so a pick applies in the same document with no navigation or reload. The trigger icon is swapped by the `dark` class itself (`dark:hidden` / `hidden dark:block`) rather than from state, so it is correct at the first paint and cannot mismatch during hydration. |
+| Theme state | `web/src/contexts/ThemeContext.tsx` | `ThemeProvider` (mounted in `layout.tsx`, outside `ToastProvider`) + `useTheme()` → `{ preference, resolvedTheme, setPreference }`. Owns the live `prefers-color-scheme` listener and **every class write after hydration**; the pre-paint script owns the first paint, and the hand-over is silent because both resolve through `theme-preference.ts`. Any control that shows or changes the theme reads it here — never `localStorage` or `classList` directly. The OS setting is read with **`useSyncExternalStore(subscribeToSystemDarkChanges, systemPrefersDark, systemPrefersDark)`** — not `useState` seeded in render, which loses an OS flip landing between that render and its commit, and cannot be corrected from an effect without a synchronous `setState` there (`react-hooks/set-state-in-effect`). `getServerSnapshot` is deliberately the same reader, not a constant: React uses it for the **hydration** render too, so a constant would resolve light on an OS-dark machine and strip the pre-paint class before restoring it — the flash AC-2 forbids. It is safe because the value reaches no rendered markup on either side (no server-rendered theme class, class written imperatively post-commit, icon swapped by CSS, menu items read `preference` and mount only when opened). The preference itself stays ordinary state — only this app changes it. |
 | Read-failure wording | `web/src/lib/api/read-failure.ts` | `describeReadFailure(error)` → one curated sentence (transport failure → `BACKEND_UNREACHABLE_MESSAGE`; an envelope's own message; wrong shape → `UNUSABLE_RESPONSE_MESSAGE`). `isInfrastructureReadFailure(error)` → whether a rejected read was the plumbing (retryable) or the backend answering about the record (see Decision 3). Also `isAPIError()`. No raw backend/database text reaches a screen. |
 
 ### Generated pre-BUILD for this epic
@@ -230,6 +233,146 @@ Established by story 1's spec; the other eight follow them.
 
 ---
 
+## Decision 4 — The theme contract
+
+**Introduced by:** `theme-switching` story 1. Settled by the orchestrator before the remaining specs
+were generated, because story 1's spec pinned a storage key and story 2's did not — this is the binding
+version, and every story, spec and component in the epic must use it.
+
+| | |
+|---|---|
+| **Storage key** | `localStorage['theme']` — production code must export a `THEME_STORAGE_KEY` constant; nothing may hardcode the string |
+| **Stored values** | `'light'` or `'dark'` only |
+| **"Follow the OS"** | represented by **absence of the key**. Choosing *System* **clears** it. There is no stored `'system'` string |
+| **Applied class** | `dark` on `<html>`. Light is the **absence** of that class — there is no `light` class |
+| **OS source** | `window.matchMedia('(prefers-color-scheme: dark)')`, for both the pre-paint read and the live listener |
+| **Storage may throw** | private browsing / blocked storage. Fall back to `prefers-color-scheme`; a throw inside the pre-paint script takes the class with it and breaks the first paint |
+
+**The pre-paint script must run before `<body>` is parsed** — an inline `<script>` in `<head>`, or at the
+very top of `<body>` ahead of the shell. `next/script` with `afterInteractive`, a client-component
+effect, or anything hydration-timed fails story 1's AC-2, which asserts the resolved class is already
+correct at parser-time checkpoints where `document.readyState === 'loading'`.
+
+**As implemented (story 1) — structure stories 2–5 must not disturb.** `layout.tsx` renders an explicit
+`<head>` holding the inline script (verified: Next 16 keeps its own metadata in that head, `<title>`
+included), and `<html>` carries **no** server-rendered theme class — only `lang="en"`, the three
+`next/font` variable classes and `suppressHydrationWarning`. Of the two placements the spec allows, only
+`<head>` was safe: at the probe's `body` checkpoint the class must already be resolved, and a script at
+the top of `<body>` runs *after* the parser has inserted `<body>`. A consequence worth knowing: with
+JavaScript disabled nothing sets the class, so the app renders in light.
+
+### `suppressHydrationWarning` is required but **not assertable**
+
+React treats it as a reserved prop and **never writes it to the DOM** (verified in
+`react-dom-client.development.js` — `setProp` hits a bare `break`); it is stripped in `renderToString`
+too. So story 1's developer must add it to `<html>`, but no test at any layer can hold them to it. It is
+a **code-review** item, not a test target. Do not write a test that appears to check it — such a test
+can never fail.
+
+### Testing the theme
+
+- **Never assert colours, hex values or computed styles** (`.claude/policies/styling-centralisation.md`).
+  Assert the *mechanism*: presence/absence of the `dark` class, and whether it changed.
+- Playwright emulates the OS setting with `colorScheme` / `page.emulateMedia({ colorScheme })` — that is
+  how OS-following and the light-theme scans are exercised. No manual OS switching.
+- jsdom implements **no** `matchMedia`. Any Vitest file that renders the shell must shim it in
+  `beforeAll` (reporting `matches: false`, never firing a change) or the whole shell throws on render.
+  Radix's `dropdown-menu` additionally needs the four pointer/scroll shims epic 1 already uses for
+  `select` and `alert-dialog`.
+- **The light-theme axe scan belongs to story 5**, not story 1 — light is still unfixed at story 1, so a
+  both-themes scan there would be red until story 5 lands. Epic 1's dark-only scan in
+  `epic-zoo-animal-manager-story-2-app-shell-and-roster.spec.ts` stays where it is.
+
+### ⚠ Epic 1's axe baseline will start measuring the LIGHT roster
+
+Playwright's default `colorScheme` is **`'light'`**, and epic 1's story-2 axe test emulates none — it
+passed only because `layout.tsx` hardcoded the dark class. Once story 1 makes the theme OS-driven, that
+same test begins scanning the app in **light**.
+
+**This is a feature, not a break.** It becomes an early-warning signal for light-theme contrast, and it
+is precisely what should fail if a light surface carries orange text. So:
+
+- **Do not** emulate dark into epic 1's spec to keep it quiet, and do not loosen its tags. That would
+  hide the exact defect this epic exists to prevent.
+- **Do** expect it to be red between stories 1 and 4/5, and fix it by fixing the colours — which is
+  stories 4 and 5's whole job.
+- The per-story light gate only runs lint + test-quality, so this won't surface until the epic-end
+  Playwright run, by which point stories 4 and 5 will have landed.
+
+**Outcome (story 4): this worked exactly as intended and is now green again.** The scan caught one
+real light-theme violation, and only one — `color-contrast` at **4.34:1** (`#ce4e51` on `#ffffff`,
+expected 4.5:1) on the destructive `AlertDescription`, in the **failed-load** state the spec scans
+alongside the populated roster. Cause: `alert.tsx`'s CLI-default `text-destructive/90` alpha (see the
+Shadcn primitives row). Fixed by dropping the alpha; both scanned states pass in light. So story 5's
+both-themes scan starts from a green light baseline, and the roster's own light colours — the
+`text-primary` name links (5.4:1), `--muted-foreground` body copy (5.5:1 on the page, 5.8:1 on a
+card) and table text (19:1) — needed no change.
+
+### Surface separation is token-level, and deliberately symmetric between themes
+
+Measured across every screen in story 4's light audit: the hairline that separates a surface from
+the page behind it is **equally faint in both themes** — `--border` is 1.38:1 on the light page
+(`#dad6cb` on `#fff9ec`) and 1.58:1 on the dark one (`#333333` on `#090909`); an input's boundary is
+1.45:1 on the light card and 1.41:1 on the dark one. Light additionally gets Tailwind's black-based
+`shadow-*`, which is near-invisible on `#090909`, so if anything light is the better-defined of the
+two.
+
+So **"the borders are too faint in light" is a token complaint, not a component one.** The fix is
+`--border` / `--input` under `:root` in `design-tokens.css`, applied once; adding a per-component
+border, ring or `bg-*` lift to one card or one input is not. Every surface in this app
+(`Card`, `Toast`, `AlertDialogContent`, `SelectContent`, `DropdownMenuContent`) already carries a
+`border` in both themes — none relies on being lighter than the page.
+
+Corollary for anything that composites: `--card` (`#ffffff`) is **lighter** than the light page
+(`#fff9ec`), so light does have a raised direction available — but at 1.05:1 it is not a usable
+separation cue on its own. Only the border is.
+
+### The both-themes axe scan (story 5) — proven to bite, and what it cannot see
+
+`epic-theme-switching-story-5-light-states-and-a11y.spec.ts` runs the WCAG 2.1 AA scan as
+`colorScheme` **`light` × `dark`** over five surfaces (roster, roster failed-to-load, an animal's
+detail, habitats, the add form), each on its own page, asserting the resolved theme *before* each
+scan. Epic 1's baseline is extended, never replaced.
+
+**It bites — verified, not assumed.** Adding `text-brand-primary` to `FailureState`'s `AlertTitle`
+and rebuilding turns the **light** half red (`color-contrast`, serious, on the alert title) while the
+**dark** half still passes: orange is 2.7:1 on the light card and ~5.8:1 on the dark one. That
+asymmetry is the entire reason the scan is parameterised. Re-run that one-line mutation if the scan's
+value is ever doubted — a green both-themes run is otherwise indistinguishable from a vacuous one.
+
+**What it does not cover.** Only those five surfaces in their default state. The states story 5 is
+*about* — both empty states, "no matches", not-found (detail and edit), every loading placeholder,
+and `AnimalForm`'s two refusals — are **unscanned**, because reaching them needs interception the
+scan does not install. A contrast regression there is caught by eye at the manual-test gate, not by
+any gate.
+
+### Light's non-happy states needed no per-state fix (story 5)
+
+Measured in a real browser against a production build, in both themes, across every state above:
+each one is expressed purely in swapped semantic tokens, so nothing was tuned for dark and nothing
+inverted badly on cream. In light, every text pair is **≥5.05:1** — destructive on the white card
+5.05, muted body copy 5.79, `--primary` links 5.40, ink 18.98.
+
+Two specifics worth not re-deriving:
+
+- **The skeleton does not vanish on cream.** `Skeleton` is `bg-accent`, which is ~10% of the
+  foreground over the background in *both* themes — 1.24:1 on the light page vs 1.35:1 on the dark
+  one, and 1.30 vs 1.20 on a card. So it goes *darker* on cream rather than lighter, which is the
+  failure mode the story was written to catch. Light is the better of the two on a card.
+- **Both `AnimalForm` refusals are `--destructive` in both themes**, never the brand orange
+  (AC-4/BR5): the duplicate-name `Warning` as the Name entry's own `FormMessage` + `aria-invalid`
+  border (5.05:1 in light, 5.87:1 in dark), the technical `Error` as the form-level `Alert`.
+
+### Nav shape the theme control must respect
+
+The nav landmark holds **exactly two links** (`Animals`, `Habitats`) — pinned by epic 1 and re-pinned by
+this epic's baseline. So the theme control must be a **button** (a dropdown trigger), never an anchor,
+and there must be exactly **one** button in the nav — a three-inline-button toggle group fails. The
+active option must declare itself through **semantics** (`aria-checked` on `menuitemradio` is the
+expected route), never by highlight or a bare tick with no ARIA state.
+
+---
+
 ## Cross-epic debt
 
 - **`web/src/components/ui/form.tsx` emits a dangling `aria-describedby`.** `FormControl`
@@ -241,6 +384,16 @@ Established by story 1's spec; the other eight follow them.
   any fix diverges from the generated primitive (the same class of divergence as `button.tsx`'s
   destructive variant). Worth revisiting if a screen ever adds `FormDescription`, or on the next
   Shadcn upgrade. Found by the epic-end code review, severity low.
+
+- **An `outline` button's boundary is below WCAG 2.1 SC 1.4.11's 3:1, in both themes.**
+  `button.tsx`'s `outline` variant fills with `bg-background` — *identical* to the page — so its only
+  boundary is `--border`: **1.38:1** in light and **1.24:1** in dark, measured on `FailureState`'s
+  Retry control (the most consequential instance; `Cancel`, `Edit animal` and the dialog's Cancel are
+  the same variant). SC 1.4.11 asks for 3:1 on the visual information that identifies a control.
+  **Deliberately not fixed in story 5:** it is theme-symmetric and pre-dates this epic, so it is not
+  a light-theme defect, and the boundary is a *token* value — lifting it for one control class would
+  diverge from `--border` app-wide. axe cannot detect boundary contrast, so no gate catches it
+  either. This needs a design decision, not a patch.
 
 _Open items that later work should close._
 
@@ -254,12 +407,6 @@ _Open items that later work should close._
   what sent it.
 - **`API_KEY` is not set in `web/.env.local`.** Every screen renders its failure state until a real
   key is pasted in; no automated test can catch this, since all of them stub the key.
-- **The template's `Toast`/`ToastContainer` are styled with raw Tailwind palette classes**
-  (`bg-white`, `border-red-500`, `text-green-500`, `text-gray-900`) rather than the design tokens, so
-  every write confirmation renders a white card with grey text in a permanently-dark app. Behaviour and
-  roles are correct (`error` → `role="alert"`, everything else → `role="status"`); only the styling is
-  off-brand. Re-skin against the token set (`--card`, `--destructive`, `--success`, `--warning`) rather
-  than adding a second notification system.
 - **The proxy itself is covered only by `web/src/__tests__/integration/api-route-handlers.test.ts`.**
   The story test files mock `@/lib/api/client` and the Playwright specs intercept `/api/*`, so neither
   layer exercises a route handler. Extend that file rather than assuming a story test covers it.

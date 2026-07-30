@@ -78,33 +78,12 @@ export const TOAST_DEFAULTS = {
   DISMISSIBLE: true,
 } as const;
 
-/**
- * Toast variant configuration
- * Maps variants to their visual properties
+/*
+ * There is deliberately NO variant→colour map here. A notification's colours are
+ * resolved in `web/src/components/toast/Toast.tsx` from the semantic design tokens
+ * (`--card`, `--destructive`, `--success`, `--warning`, `--muted-foreground`), so they
+ * follow the active theme. The template's `TOAST_VARIANT_CONFIG` held raw Tailwind
+ * palette classes, was imported by nothing, and was removed rather than token-ised —
+ * token-ising it would only have relocated dead code and created a second, competing
+ * source for the same styling.
  */
-export const TOAST_VARIANT_CONFIG = {
-  success: {
-    bgColor: 'bg-green-50',
-    borderColor: 'border-green-200',
-    textColor: 'text-green-900',
-    iconColor: 'text-green-600',
-  },
-  error: {
-    bgColor: 'bg-red-50',
-    borderColor: 'border-red-200',
-    textColor: 'text-red-900',
-    iconColor: 'text-red-600',
-  },
-  info: {
-    bgColor: 'bg-blue-50',
-    borderColor: 'border-blue-200',
-    textColor: 'text-blue-900',
-    iconColor: 'text-blue-600',
-  },
-  warning: {
-    bgColor: 'bg-amber-50',
-    borderColor: 'border-amber-200',
-    textColor: 'text-amber-900',
-    iconColor: 'text-amber-600',
-  },
-} as const;
