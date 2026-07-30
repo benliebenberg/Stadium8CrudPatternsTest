@@ -136,6 +136,14 @@ segment that cannot be an animal id answers 404 with the same envelope shape.
 successful read is an unwrapped `AnimalRead`, so an empty object, or a body carrying `MessageType`,
 means "not found" rather than a retryable failure.
 
+That leaves one ambiguity on the single-animal read, since a missing record and a broken backend both
+arrive as HTTP 500 + an `Error` envelope. The discriminator is **whose words the message is**: the
+app's own infrastructure wording (`failure-messages.ts`, plus `unusableResponseMessages()`) means the
+request never got an answer about the record → the retryable **failed** state; anything else came
+from the backend talking about this specific read → **not found**, which no retry can fix.
+`isInfrastructureReadFailure()` in `web/src/lib/api/read-failure.ts` owns that call; every
+single-record read uses it rather than re-deciding.
+
 ---
 
 ## Reusable code
@@ -164,11 +172,14 @@ means "not found" rather than a retryable failure.
 | Screen routes | `web/src/lib/routes.ts` | `ANIMALS_ROUTE` (`/`), `HABITATS_ROUTE`, `animalDetailRoute(id)` — the pages a person navigates to. |
 | App shell | `web/src/components/layout/AppShell.tsx` + `AppNav.tsx` | Owns the **single** `<main>` landmark and the only `navigation` landmark (Animals / Habitats, current section marked with `aria-current="page"`). Mounted by `layout.tsx` inside `ToastProvider`. **No page may render its own `<main>`.** |
 | Read-state components | `web/src/components/feedback/` | `LoadingState` (`role="status"` + an accessible name saying what is loading, over Shadcn skeletons), `EmptyState` (quiet card — no `alert`, no retry), `FailureState` (destructive `Alert` + an adjacent Retry button, outside the live region). Every read screen renders these three rather than inventing its own; keep each screen's empty and failure wording distinct from one another. |
-| Animal roster table | `web/src/components/animals/AnimalRosterTable.tsx` | Shadcn `Table` with Name / Species / Age / Habitat / Diet; Name is an anchor to `animalDetailRoute(Id)`; absent fields degrade to "Not recorded" (never `undefined`/`NaN`); never re-sorts, never filters, never drops a row. |
+| Animal roster table | `web/src/components/animals/AnimalRosterTable.tsx` | Shadcn `Table` with Name / Species / Age / Habitat / Diet; Name is an anchor to `animalDetailRoute(Id)`; never re-sorts, never filters, never drops a row. Absent fields go through the shared display helpers below. |
+| Animal field display | `web/src/lib/animals/animal-display.ts` | `NOT_RECORDED`, `recordedText` / `recordedNumber` / `recordedYears` ("6 years"), `animalDisplayName(animal)` (falls back to `Animal {Id}` so a heading/link always has a name). Every field on the generated types is optional, so this is how a gap renders — never `undefined` / `NaN`. **`recordedText` returns the value verbatim**: nothing here reformats, which is what keeps `LastChangedDate` un-reconverted (BR13). React-free, fetch-free. |
+| One animal's record | `web/src/components/animals/AnimalRecord.tsx` | `<dl>` in a Shadcn `Card`: `<dt>` label + `<dd>` value per field, values asserted against their own labels by both test layers. Owns the two audit-field rules — `LastChangedDate` rendered character-for-character with the zone named in the **label** (`Last changed (SAST)`), and `LastChangedUser` labelled `System source` with no attribution phrasing anywhere (BR13/BR14). No `new Date` / `Intl` / date library may enter this file. |
 | Roster loading + retry | `web/src/hooks/use-animal-roster.ts` | `useAnimalRoster()` → `{ state: loading \| loaded \| failed, reload }`. One request per attempt (filtering must work over `state.animals` in memory, never re-fetch), `Array.isArray(body.Animals)` shape guard so a non-roster body is a **failure** not an empty zoo, and stale/unmounted responses are discarded. |
+| One animal loading + retry | `web/src/hooks/use-animal-detail.ts` | `useAnimalDetail(id)` → `{ state: loading \| loaded \| not-found \| failed, reload }`. Same attempt-counter/unmount guards as the roster hook. Owns the BR8/BR9 shape reading: an envelope body or an object with no `Id`/`Name` is **not-found**, and a rejection is split by `isInfrastructureReadFailure()`. Any screen needing one animal (detail, edit) uses this rather than calling `get(animalEndpoint(id))` itself. |
 | Roster narrowing rules | `web/src/lib/animals/roster-filters.ts` | `habitatsInRoster(animals)` → the distinct `HabitatName`s the loaded roster occupies, sorted; `filterRoster(animals, { term, habitat })` → case-insensitive **substring** match on Name **or** Species, **intersected** with an exact habitat. Pure, React-free, fetch-free: narrowing is always derived state over the roster already in memory, never a request (BR6). |
 | Roster filter controls | `web/src/components/animals/RosterFilters.tsx` | Controlled search box (named by a real `<Label>`, `type="search"`) + Shadcn `Select` habitat filter named with `aria-labelledby` (a `<label for>` cannot name Radix's button trigger, whose content is the selected value) and an "All habitats" reset option. Choices are passed in — this component never fetches. **A habitat _filter_ derives its choices from the loaded roster; a habitat _picker_ in a create/edit form must read `/api/habitats` instead, or an unoccupied habitat could never be assigned.** |
-| Read-failure wording | `web/src/lib/api/read-failure.ts` | `describeReadFailure(error)` → one curated sentence (transport failure → `BACKEND_UNREACHABLE_MESSAGE`; an envelope's own message; wrong shape → `UNUSABLE_RESPONSE_MESSAGE`). Also `isAPIError()`. No raw backend/database text reaches a screen. |
+| Read-failure wording | `web/src/lib/api/read-failure.ts` | `describeReadFailure(error)` → one curated sentence (transport failure → `BACKEND_UNREACHABLE_MESSAGE`; an envelope's own message; wrong shape → `UNUSABLE_RESPONSE_MESSAGE`). `isInfrastructureReadFailure(error)` → whether a rejected read was the plumbing (retryable) or the backend answering about the record (see Decision 3). Also `isAPIError()`. No raw backend/database text reaches a screen. |
 
 ### Generated pre-BUILD for this epic
 

@@ -19,7 +19,12 @@
  *    no message to lift.
  */
 
-import { BACKEND_UNREACHABLE_MESSAGE } from '@/lib/api/failure-messages';
+import {
+  API_KEY_MISSING_MESSAGE,
+  API_KEY_REJECTED_MESSAGE,
+  BACKEND_UNREACHABLE_MESSAGE,
+  unusableResponseMessages,
+} from '@/lib/api/failure-messages';
 import type { APIError } from '@/types/api';
 
 /**
@@ -61,4 +66,60 @@ export function describeReadFailure(error: unknown): string {
   }
 
   return error.message;
+}
+
+/**
+ * The wording this app produces itself when its own server tier could not reach or could not
+ * use the Linx backend — as opposed to anything the backend said about a particular record.
+ *
+ * These are the app's own constants, not pattern-matching on backend text: every one is
+ * written in `@/lib/api/failure-messages` and reaches the browser through the route handlers'
+ * `Error` envelope, which `client.ts` lifts onto `APIError.message`.
+ */
+const INFRASTRUCTURE_MESSAGES: ReadonlySet<string> = new Set([
+  BACKEND_UNREACHABLE_MESSAGE,
+  API_KEY_MISSING_MESSAGE,
+  API_KEY_REJECTED_MESSAGE,
+]);
+
+/**
+ * True when a rejected read is the plumbing failing, rather than an answer about the record.
+ *
+ * This distinction exists for the single-animal read. That endpoint has **no clean 404 path**
+ * — its Linx event is `ReadAnimal → Return` with no `TryCatch` and no `If` branch (BR9) — so
+ * a missing record and a broken backend both surface as HTTP 500 carrying an `Error`
+ * envelope, and the detail screen has to choose between two very different states: "this
+ * animal does not exist" (no retry will help) and "we could not load it" (retry might).
+ *
+ * The one signal that separates them is **whose words the message is**. If it is one of this
+ * app's own infrastructure sentences — or the generic "could not read that response" wording
+ * `unusableResponseMessages()` builds for a status with no envelope behind it — then the
+ * request never got a real answer about the record, and the retryable failure state is
+ * correct. Anything else came from the backend talking about this specific read, which on an
+ * endpoint whose success shape is a bare `AnimalRead` (BR8) can only mean the record was not
+ * returned.
+ *
+ * A transport failure (`statusCode: 0`) is infrastructure by definition, and a rejection with
+ * no error object to read is treated the same way: there is nothing there that could be an
+ * answer about the record.
+ *
+ * @param error What the read rejected with.
+ */
+export function isInfrastructureReadFailure(error: unknown): boolean {
+  if (!isAPIError(error)) {
+    return true;
+  }
+
+  const { statusCode } = error;
+
+  // No status at all, or the "no response" status: nothing arrived that could be an answer
+  // about the record.
+  if (statusCode === undefined || statusCode === TRANSPORT_FAILURE_STATUS) {
+    return true;
+  }
+
+  return (
+    INFRASTRUCTURE_MESSAGES.has(error.message) ||
+    unusableResponseMessages(statusCode).includes(error.message)
+  );
 }

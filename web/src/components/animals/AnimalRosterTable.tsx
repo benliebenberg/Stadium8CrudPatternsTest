@@ -12,7 +12,8 @@
  *    to "Not recorded" rather than rendering `undefined` / `NaN` at a user. Rows are never
  *    dropped for it: an animal with an unmatched habitat is already excluded by the backend's
  *    INNER JOIN (BR5), and re-implementing that rule here would hide a record the backend did
- *    choose to send.
+ *    choose to send. The rules for that live in `@/lib/animals/animal-display`, shared with
+ *    the detail view so a gap reads identically on both screens.
  */
 
 import Link from 'next/link';
@@ -26,38 +27,13 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import {
+  animalDisplayName,
+  recordedNumber,
+  recordedText,
+} from '@/lib/animals/animal-display';
 import { animalDetailRoute } from '@/lib/routes';
 import type { AnimalRead } from '@/types/api-generated';
-
-/** Shown in place of a field the record does not carry. */
-const NOT_RECORDED = 'Not recorded';
-
-/** Text for a field that may be absent or blank. */
-function textValue(value: string | undefined): string {
-  const trimmed = value?.trim();
-  return trimmed === undefined || trimmed === '' ? NOT_RECORDED : trimmed;
-}
-
-/** Text for a numeric field, without letting a non-number reach the screen. */
-function numberValue(value: number | undefined): string {
-  return value === undefined || !Number.isFinite(value)
-    ? NOT_RECORDED
-    : String(value);
-}
-
-/**
- * What to call an animal in its own row. Falls back to the id so the row's link always has an
- * accessible name — an unnamed link is unusable to a screen reader.
- */
-function displayName(animal: AnimalRead): string {
-  const name = animal.Name?.trim();
-
-  if (name !== undefined && name !== '') {
-    return name;
-  }
-
-  return animal.Id === undefined ? 'Unnamed animal' : `Animal ${animal.Id}`;
-}
 
 export function AnimalRosterTable({
   animals,
@@ -80,7 +56,7 @@ export function AnimalRosterTable({
       </TableHeader>
       <TableBody>
         {animals.map((animal, row) => {
-          const name = displayName(animal);
+          const name = animalDisplayName(animal);
 
           return (
             <TableRow key={animal.Id ?? `row-${row}`}>
@@ -96,10 +72,10 @@ export function AnimalRosterTable({
                   </Link>
                 )}
               </TableCell>
-              <TableCell>{textValue(animal.Species)}</TableCell>
-              <TableCell>{numberValue(animal.Age)}</TableCell>
-              <TableCell>{textValue(animal.HabitatName)}</TableCell>
-              <TableCell>{textValue(animal.Diet)}</TableCell>
+              <TableCell>{recordedText(animal.Species)}</TableCell>
+              <TableCell>{recordedNumber(animal.Age)}</TableCell>
+              <TableCell>{recordedText(animal.HabitatName)}</TableCell>
+              <TableCell>{recordedText(animal.Diet)}</TableCell>
             </TableRow>
           );
         })}

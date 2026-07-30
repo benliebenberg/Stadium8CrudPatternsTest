@@ -34,24 +34,24 @@
       "completedAt": "2026-07-30T10:48:00.000Z"
     },
     "3": {
-      "status": "in-progress",
+      "status": "complete",
       "commit": null,
       "e2eStatus": "deferred",
       "startedAt": "2026-07-30T10:50:00.000Z",
-      "completedAt": null
+      "completedAt": "2026-07-30T11:22:00.000Z"
     },
     "4": {
-      "status": "pending",
+      "status": "complete",
       "commit": null,
       "e2eStatus": "deferred",
-      "startedAt": null,
-      "completedAt": null
+      "startedAt": "2026-07-30T11:24:00.000Z",
+      "completedAt": "2026-07-30T11:58:00.000Z"
     },
     "5": {
-      "status": "pending",
+      "status": "in-progress",
       "commit": null,
       "e2eStatus": "deferred",
-      "startedAt": null,
+      "startedAt": "2026-07-30T12:00:00.000Z",
       "completedAt": null
     },
     "6": {
