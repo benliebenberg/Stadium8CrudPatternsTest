@@ -9,8 +9,18 @@ const alertVariants = cva(
     variants: {
       variant: {
         default: 'bg-card text-card-foreground',
+        // One deliberate divergence from the Shadcn CLI default. Restore this note if the
+        // file is ever re-generated:
+        //   - the description is `text-destructive`, NOT the CLI's `text-destructive/90`.
+        //     That 90% alpha composites the token against whatever is behind it, and on this
+        //     project's LIGHT card (`--card: #ffffff`) it drops `--destructive` (#c93a3e)
+        //     from 5.05:1 to 4.34:1 — below the 4.5:1 AA floor NFR-base-1 sets. In dark it
+        //     survives (5.87:1 → 4.98:1 on `--card: #181818`), which is exactly why the alpha
+        //     went unnoticed while the app was dark-only. Full opacity is compliant in both.
+        //     This is the description of every failed read (`FailureState`) and of a save that
+        //     failed technically (`AnimalForm`), so it is real running text, not a corner.
         destructive:
-          'bg-card text-destructive *:data-[slot=alert-description]:text-destructive/90 [&>svg]:text-current',
+          'bg-card text-destructive *:data-[slot=alert-description]:text-destructive [&>svg]:text-current',
       },
     },
     defaultVariants: {

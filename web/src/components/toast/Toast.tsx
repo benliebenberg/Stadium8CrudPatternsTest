@@ -151,7 +151,11 @@ export function Toast({ toast, onDismiss }: ToastProps) {
 
       {/* Content */}
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-card-foreground">
+        {/* `font-medium` (500), never `font-semibold` (600): the brand uses weights 400 and
+            500 only, and emphasis comes from colour and size instead
+            (generated-docs/specs/design-tokens.md §1). Handed over from story 3, whose scope
+            was colour alone. */}
+        <p className="text-sm font-medium text-card-foreground">
           {toast.title}
         </p>
         {toast.message && (
