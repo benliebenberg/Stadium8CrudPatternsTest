@@ -30,6 +30,20 @@
  * which is what Shadcn's `FormControl` + `FormMessage` produce — a message that is merely
  * *near* a field is invisible to anyone using a screen reader.
  *
+ * ## The entries wait for the habitat choices
+ *
+ * The five entries appear only once `useHabitats()` has answered. Two reasons, and the second is
+ * the one that made this necessary:
+ *
+ * 1. A habitat is mandatory, so nothing on this form can be saved before the choices exist. A
+ *    picker rendered with an empty list invites someone to open it, find nothing, and conclude
+ *    the zoo has no habitats.
+ * 2. **A prefilled form must paint its prefill correctly the first time.** The edit screen mounts
+ *    this component with the animal's stored `HabitatId`, and Radix's `Select` can only display
+ *    that value once the matching option exists — so a form rendered before the habitats arrived
+ *    would show every other entry filled in and the habitat blank, which reads as "this animal
+ *    has no habitat" precisely where the most consequential edit is made (BR5).
+ *
  * The habitat is mandatory and nothing is preselected. The backend INNER JOINs Habitat on read,
  * so an animal saved against a missing habitat is created and then **permanently invisible in
  * every list** (BR5); quietly choosing one on the user's behalf would hide that decision. The
@@ -57,6 +71,7 @@ import { useId, useState } from 'react';
 import { useForm } from 'react-hook-form';
 
 import { FailureState } from '@/components/feedback/FailureState';
+import { LoadingState } from '@/components/feedback/LoadingState';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import {
@@ -97,6 +112,8 @@ const HABITAT_PLACEHOLDER = 'Select a habitat';
 const HABITATS_FAILED_TITLE = 'The habitats could not be loaded';
 const HABITATS_FAILED_HINT =
   'An animal can only be saved against a habitat that already exists, so try loading them again.';
+const HABITATS_LOADING_LABEL =
+  'Loading the habitats this animal can be assigned to';
 
 /**
  * What the user reads when the backend refuses the save.
@@ -279,118 +296,135 @@ export function AnimalForm({
           />
         )}
 
-        <div className="grid gap-6 sm:grid-cols-2">
-          <FormField
-            control={form.control}
-            name="Name"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Name</FormLabel>
-                <FormControl>
-                  <Input autoComplete="off" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+        {habitatsState.status === 'loading' && (
+          // Never a blank space where the entries will be (NFR-2), and never an entry that
+          // cannot yet be filled in correctly.
+          <LoadingState label={HABITATS_LOADING_LABEL} rows={3} />
+        )}
 
-          <FormField
-            control={form.control}
-            name="Species"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Species</FormLabel>
-                <FormControl>
-                  <Input autoComplete="off" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+        {habitatsState.status === 'loaded' && (
+          <>
+            <div className="grid gap-6 sm:grid-cols-2">
+              <FormField
+                control={form.control}
+                name="Name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Name</FormLabel>
+                    <FormControl>
+                      <Input autoComplete="off" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-          <FormField
-            control={form.control}
-            name="Age"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Age</FormLabel>
-                <FormControl>
-                  {/* A text entry with a numeric keypad rather than `type="number"`: a number
+              <FormField
+                control={form.control}
+                name="Species"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Species</FormLabel>
+                    <FormControl>
+                      <Input autoComplete="off" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="Age"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Age</FormLabel>
+                    <FormControl>
+                      {/* A text entry with a numeric keypad rather than `type="number"`: a number
                       input silently discards keystrokes it dislikes, and the person would then
                       never see this form's own "whole number of 0 or more" message — which is
                       the only rule standing between them and a bad row (R19). */}
-                  <Input inputMode="numeric" autoComplete="off" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+                      <Input
+                        inputMode="numeric"
+                        autoComplete="off"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-          <FormField
-            control={form.control}
-            name="Diet"
-            render={({ field }) => (
-              <FormItem>
-                {/* Free text: the API declares no diet enum, so a picker would invent one. */}
-                <FormLabel>Diet</FormLabel>
-                <FormControl>
-                  <Input autoComplete="off" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+              <FormField
+                control={form.control}
+                name="Diet"
+                render={({ field }) => (
+                  <FormItem>
+                    {/* Free text: the API declares no diet enum, so a picker would invent one. */}
+                    <FormLabel>Diet</FormLabel>
+                    <FormControl>
+                      <Input autoComplete="off" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-          <FormField
-            control={form.control}
-            name="HabitatId"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel id={habitatLabelId}>{HABITAT_LABEL}</FormLabel>
-                <Select value={field.value} onValueChange={field.onChange}>
-                  <FormControl>
-                    <SelectTrigger
-                      aria-labelledby={habitatLabelId}
-                      className="w-full"
-                      onBlur={field.onBlur}
-                    >
-                      <SelectValue placeholder={HABITAT_PLACEHOLDER} />
-                    </SelectTrigger>
-                  </FormControl>
-                  {/* Only the habitats that exist. No "add a habitat" row: there is no endpoint
+              <FormField
+                control={form.control}
+                name="HabitatId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel id={habitatLabelId}>{HABITAT_LABEL}</FormLabel>
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <FormControl>
+                        <SelectTrigger
+                          aria-labelledby={habitatLabelId}
+                          className="w-full"
+                          onBlur={field.onBlur}
+                        >
+                          <SelectValue placeholder={HABITAT_PLACEHOLDER} />
+                        </SelectTrigger>
+                      </FormControl>
+                      {/* Only the habitats that exist. No "add a habitat" row: there is no endpoint
                       behind one (R16/BR7). */}
-                  <SelectContent>
-                    {habitats.map((habitat) => (
-                      <SelectItem key={habitat.Id} value={String(habitat.Id)}>
-                        {habitatChoiceLabel(habitat)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
+                      <SelectContent>
+                        {habitats.map((habitat) => (
+                          <SelectItem
+                            key={habitat.Id}
+                            value={String(habitat.Id)}
+                          >
+                            {habitatChoiceLabel(habitat)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
-        <div className="flex flex-wrap gap-3">
-          <Button type="submit" disabled={saving}>
-            {submitLabel}
-          </Button>
-          {/* Back where they came from — this form is reachable from more than one screen, so
+            <div className="flex flex-wrap gap-3">
+              <Button type="submit" disabled={saving}>
+                {submitLabel}
+              </Button>
+              {/* Back where they came from — this form is reachable from more than one screen, so
               history is the only correct destination. */}
-          <Button
-            type="button"
-            variant="outline"
-            className="text-foreground"
-            disabled={saving}
-            onClick={() => {
-              router.back();
-            }}
-          >
-            {CANCEL_LABEL}
-          </Button>
-        </div>
+              <Button
+                type="button"
+                variant="outline"
+                className="text-foreground"
+                disabled={saving}
+                onClick={() => {
+                  router.back();
+                }}
+              >
+                {CANCEL_LABEL}
+              </Button>
+            </div>
+          </>
+        )}
       </form>
     </Form>
   );

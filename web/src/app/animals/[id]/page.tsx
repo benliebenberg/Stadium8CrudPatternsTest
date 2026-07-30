@@ -39,13 +39,14 @@ import { useParams } from 'next/navigation';
 import { AnimalRecord } from '@/components/animals/AnimalRecord';
 import { FailureState } from '@/components/feedback/FailureState';
 import { LoadingState } from '@/components/feedback/LoadingState';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import {
   useAnimalDetail,
   type AnimalDetailState,
 } from '@/hooks/use-animal-detail';
 import { animalDisplayName } from '@/lib/animals/animal-display';
-import { ANIMALS_ROUTE } from '@/lib/routes';
+import { animalEditRoute, ANIMALS_ROUTE, routeSegment } from '@/lib/routes';
 
 /**
  * User-visible copy.
@@ -55,6 +56,16 @@ import { ANIMALS_ROUTE } from '@/lib/routes';
  * a reader who cannot tell them apart cannot act on either. Only the first is retryable.
  */
 const BACK_TO_ROSTER = 'Back to the animal roster';
+
+/**
+ * The edit action's wording, and it is load-bearing in two directions.
+ *
+ * "Edit animal" (singular) rather than "Edit animals": the plural would read as an action on the
+ * whole roster, and it would also collide with the way back to the roster — one control per page
+ * leads back to the animal list, and a second control matching the same words would make "the way
+ * back" ambiguous for anyone scanning by link text.
+ */
+const EDIT_ANIMAL = 'Edit animal';
 const LOADING_LABEL = 'Loading animal record';
 const RECORD_FAILED_TITLE = 'This animal’s record could not be loaded';
 const NOT_FOUND_TITLE = 'Animal not found';
@@ -63,22 +74,6 @@ const NOT_FOUND_DETAIL =
 
 /** The heading shown before the record arrives, when the animal's name is not yet known. */
 const PENDING_TITLE = 'Animal record';
-
-/**
- * The animal id out of the route.
- *
- * A dynamic segment is typed as possibly an array (catch-all routes) and possibly absent, so
- * both are narrowed here rather than asserted away. It is passed on exactly as it appears in
- * the address bar: the route handler is what decides whether it could be an animal id at all,
- * and it answers a junk segment with a proper not-found.
- */
-function routeSegment(value: string | string[] | undefined): string {
-  if (Array.isArray(value)) {
-    return value[0] ?? '';
-  }
-
-  return value ?? '';
-}
 
 /**
  * The page heading for the current state.
@@ -101,7 +96,8 @@ function headingFor(state: AnimalDetailState): string {
 
 export default function AnimalDetailPage() {
   const params = useParams();
-  const { state, reload } = useAnimalDetail(routeSegment(params.id));
+  const id = routeSegment(params.id);
+  const { state, reload } = useAnimalDetail(id);
 
   return (
     <div className="flex flex-col gap-6">
@@ -119,8 +115,21 @@ export default function AnimalDetailPage() {
         <h1 className="font-secondary text-h3 tracking-tight">
           {headingFor(state)}
         </h1>
-        {/* Record-level actions land here: Edit (story 7) and Remove (story 9). Deliberately
-            empty for now — this story builds neither. */}
+        {/* Record-level actions. Remove (story 9) joins Edit here. */}
+        {state.status === 'loaded' && (
+          <div className="flex flex-wrap gap-3">
+            {/* A real anchor, not a button that pushes a route: the edit form for one animal is
+                an address, so it has to be deep-linkable, middle-clickable and openable in a new
+                tab. `Button asChild` gives the anchor the action styling without turning it into
+                a `<button>`.
+
+                Only when the record is here — offering "Edit animal" over a not-found page or a
+                failed load would lead to a form with nothing to prefill it. */}
+            <Button asChild variant="outline" className="text-foreground">
+              <Link href={animalEditRoute(id)}>{EDIT_ANIMAL}</Link>
+            </Button>
+          </div>
+        )}
       </div>
 
       {state.status === 'loading' && (

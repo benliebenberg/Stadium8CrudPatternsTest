@@ -7,7 +7,7 @@
 
 import { z } from 'zod';
 
-import type { AnimalWrite } from '@/types/api-generated';
+import type { AnimalRead, AnimalWrite } from '@/types/api-generated';
 
 /**
  * A whole number of zero or more, as typed — digits and nothing else.
@@ -64,6 +64,35 @@ export const EMPTY_ANIMAL_FORM: AnimalFormValues = {
   HabitatId: '',
   Diet: '',
 };
+
+/**
+ * A stored animal as the edit form holds it: the five writable fields, every one a string.
+ *
+ * The mirror image of {@link animalWriteFromForm} — that turns the form into a request body,
+ * this turns a record into a form. `Age` and `HabitatId` become the strings their controls
+ * produce, so a refused entry can be redisplayed exactly as the person left it, and the habitat
+ * picker's value matches the `String(habitat.Id)` its options carry.
+ *
+ * Only these five fields are read. `Id` is in the URL, `HabitatName` is backend-joined
+ * (R9/BR5), and the change-tracking pair is stamped server-side (R5/BR3) — none of them is an
+ * entry on this form, so none of them is copied into it.
+ *
+ * Every field on the generated types is optional (the spec declares no `required:` arrays), so
+ * a gap becomes an empty entry: refused by {@link animalFormSchema} on save, exactly as a
+ * cleared field is, rather than written back to the backend as `"undefined"`.
+ */
+export function animalFormFromRecord(animal: AnimalRead): AnimalFormValues {
+  const asEntry = (value: number | undefined): string =>
+    value === undefined ? '' : String(value);
+
+  return {
+    Name: animal.Name ?? '',
+    Species: animal.Species ?? '',
+    Age: asEntry(animal.Age),
+    HabitatId: asEntry(animal.HabitatId),
+    Diet: animal.Diet ?? '',
+  };
+}
 
 /**
  * The request body a validated form becomes: the five writable fields, with `Age` and
