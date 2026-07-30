@@ -11,6 +11,7 @@
  * (Critical Rule 6, `web/src/components/layout/AppShell.tsx`).
  */
 
+import Link from 'next/link';
 import { useMemo, useState } from 'react';
 
 import { AnimalRosterTable } from '@/components/animals/AnimalRosterTable';
@@ -18,8 +19,10 @@ import { RosterFilters } from '@/components/animals/RosterFilters';
 import { EmptyState } from '@/components/feedback/EmptyState';
 import { FailureState } from '@/components/feedback/FailureState';
 import { LoadingState } from '@/components/feedback/LoadingState';
+import { Button } from '@/components/ui/button';
 import { useAnimalRoster } from '@/hooks/use-animal-roster';
 import { filterRoster, habitatsInRoster } from '@/lib/animals/roster-filters';
+import { ANIMAL_CREATE_ROUTE } from '@/lib/routes';
 import type { AnimalRead } from '@/types/api-generated';
 
 /**
@@ -35,6 +38,7 @@ const NO_ANIMALS_DETAIL =
 const NO_MATCHES_TITLE = 'No animals match your search';
 const NO_MATCHES_DETAIL =
   'Try a shorter term, or choose a different habitat, to widen the results.';
+const ADD_ANIMAL = 'Add animal';
 
 /** A stable identity for "no animals", so the memos below do not recompute every render. */
 const NO_ANIMALS: readonly AnimalRead[] = [];
@@ -60,11 +64,20 @@ export default function HomePage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-col gap-1">
-        <h1 className="font-secondary text-h3 tracking-tight">Animals</h1>
-        <p className="text-body text-muted-foreground">
-          Every animal on record, with its habitat and diet.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="flex flex-col gap-1">
+          <h1 className="font-secondary text-h3 tracking-tight">Animals</h1>
+          <p className="text-body text-muted-foreground">
+            Every animal on record, with its habitat and diet.
+          </p>
+        </div>
+
+        {/* A real anchor, not a button that pushes a route: the add form is a page of its own, so
+            it has to be deep-linkable and openable in a new tab. Rendered in every state —
+            including the empty zoo, which is precisely when someone needs it (R17). */}
+        <Button asChild>
+          <Link href={ANIMAL_CREATE_ROUTE}>{ADD_ANIMAL}</Link>
+        </Button>
       </div>
 
       {state.status === 'loading' && <LoadingState label="Loading animals" />}

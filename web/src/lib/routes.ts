@@ -12,6 +12,9 @@ export const ANIMALS_ROUTE = '/';
 /** The habitat list. */
 export const HABITATS_ROUTE = '/habitats';
 
+/** The add-an-animal form, reached from the roster (R17). */
+export const ANIMAL_CREATE_ROUTE = '/animals/new';
+
 /** One animal's detail screen. */
 export function animalDetailRoute(id: number | string): string {
   return `/animals/${id}`;

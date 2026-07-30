@@ -7,6 +7,90 @@
 
 import { z } from 'zod';
 
+import type { AnimalWrite } from '@/types/api-generated';
+
+/**
+ * A whole number of zero or more, as typed — digits and nothing else.
+ *
+ * Deliberately a string test rather than a numeric one: `Number('2.5')` and `Number('-1')` are
+ * both perfectly good numbers, so only the text the person typed can tell "5" from "2.5" or
+ * "-1". `'0'` matches, which is the point — a newborn animal is zero years old, and a
+ * truthiness check on Age is the classic bug this closes.
+ */
+const WHOLE_NUMBER = /^\d+$/;
+
+/**
+ * The animal write form — Name, Species, Age, Habitat and Diet, and nothing else (R17).
+ *
+ * **This is the only field validation that exists anywhere in this system.** The backend
+ * declares no `required:` fields and performs no validation of its own: it inserts whatever it
+ * is sent straight into the database (R19). So a rule missing here is not "caught later" — it
+ * is not caught at all, and the bad row is permanent.
+ *
+ * Every value is held as the **string the control produced**, because that is what a DOM entry
+ * hands you and what has to be shown back to the person when it is refused. Age and HabitatId
+ * become numbers on the way to the wire — see {@link animalWriteFromForm} — never before, so a
+ * rejected entry can be redisplayed exactly as typed.
+ *
+ * The habitat is mandatory for a reason worth restating: the backend INNER JOINs Habitat when
+ * it reads, so an animal saved against a missing habitat is created and then **permanently
+ * invisible in every list** (BR5). There is no unpicking that from the UI.
+ *
+ * Consumed through react-hook-form's Zod resolver by
+ * `web/src/components/animals/AnimalForm.tsx` (add and edit share it), and directly through
+ * {@link validateRequest} anywhere else the same rules are needed.
+ */
+export const animalFormSchema = z.object({
+  Name: z.string().trim().min(1, 'Enter the animal’s name'),
+  Species: z.string().trim().min(1, 'Enter the species'),
+  Age: z
+    .string()
+    .trim()
+    .min(1, 'Enter the age')
+    .regex(WHOLE_NUMBER, 'Age must be a whole number of 0 or more'),
+  // '' is "nothing chosen yet" — the form never preselects a habitat for the user (BR5).
+  HabitatId: z.string().min(1, 'Choose a habitat'),
+  Diet: z.string().trim().min(1, 'Enter the diet'),
+});
+
+/** What the animal form holds while it is being filled in: five strings. */
+export type AnimalFormValues = z.infer<typeof animalFormSchema>;
+
+/** An untouched add form — nothing typed, and deliberately no habitat chosen (BR5). */
+export const EMPTY_ANIMAL_FORM: AnimalFormValues = {
+  Name: '',
+  Species: '',
+  Age: '',
+  HabitatId: '',
+  Diet: '',
+};
+
+/**
+ * The request body a validated form becomes: the five writable fields, with `Age` and
+ * `HabitatId` as **numbers**.
+ *
+ * The DOM hands every value over as a string and this backend stores whatever it is sent
+ * (R19), so `"5"` would be written into an integer column verbatim. The return type is
+ * `Required<AnimalWrite>` rather than `AnimalWrite` on purpose: every field on the generated
+ * types is optional (the spec declares no `required:` arrays), so only this signature makes a
+ * forgotten field a compile error.
+ *
+ * `Id`, `HabitatName`, `LastChangedUser` and `LastChangedDate` are absent and must stay absent
+ * — the first two are backend-derived, and the change-tracking pair is injected server-side as
+ * an HTTP header (R5/BR3).
+ */
+export function animalWriteFromForm(
+  values: AnimalFormValues,
+): Required<AnimalWrite> {
+  return {
+    Name: values.Name,
+    Species: values.Species,
+    Age: Number(values.Age),
+    HabitatId: Number(values.HabitatId),
+    Diet: values.Diet,
+  };
+}
+
 /**
  * Email validation schema
  * Validates email format and normalizes to lowercase
