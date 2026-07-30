@@ -39,9 +39,12 @@
      layout.tsx with matching --font-* variable names (see design-tokens.md
      "Typography" section for the exact loader config); fallback stacks below
      keep these usable even before that wiring lands. */
-  --font-primary: var(--font-inter), ui-sans-serif, system-ui, sans-serif; /* substitutes Sequel Sans Book Disp */
-  --font-secondary: var(--font-space-grotesk), ui-sans-serif, system-ui, sans-serif; /* substitutes Roobert */
-  --font-mono: var(--font-roboto-mono), ui-monospace, monospace; /* exact match, not a substitute */
+  --font-primary:
+    var(--font-inter), ui-sans-serif, system-ui, sans-serif; /* substitutes Sequel Sans Book Disp */
+  --font-secondary:
+    var(--font-space-grotesk), ui-sans-serif, system-ui, sans-serif; /* substitutes Roobert */
+  --font-mono:
+    var(--font-roboto-mono), ui-monospace, monospace; /* exact match, not a substitute */
 
   /* Type scale (exact, from live-site harvest). Each --text-* key pairs with
      its own --text-*--line-height per Tailwind v4 convention, so e.g.

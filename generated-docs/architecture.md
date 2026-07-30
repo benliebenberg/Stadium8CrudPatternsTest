@@ -147,7 +147,7 @@ means "not found" rather than a retryable failure.
 | Toast notifications | `web/src/contexts/ToastContext.tsx`, `web/src/components/toast/` | `useToast()` / `showToast({ variant, title, message })`. Use for every write confirmation and failure. Do not add a second notification system. |
 | `DefaultResponse` type | `web/src/types/api.ts` | **Canonical.** Not re-emitted in `api-generated.ts`. |
 | Validation helpers | `web/src/lib/validation/schemas.ts` | `validateRequest()` / `validateRequestAsync()` / `formFieldSchemas`. Add the animal schema alongside these. The template's email/password/userId schemas are unused by this project. |
-| Shadcn primitives | `web/src/components/ui/` | Present: `button`, `card`, `input`, `label`. Add others via the CLI (Critical Rule 1) — never hand-roll. |
+| Shadcn primitives | `web/src/components/ui/` | Present: `button`, `card`, `input`, `label`, `table`, `skeleton`, `alert`. Add others via the CLI (Critical Rule 1) — never hand-roll. Note `CardTitle` ships `font-semibold`; the brand uses weights 400/500 only, so override with `font-medium` if you use it. |
 
 ### Built in this project — reuse, don't rebuild
 
@@ -160,6 +160,13 @@ means "not found" rather than a retryable failure.
 | App's own API surface | `web/src/app/api/animals/route.ts`, `.../animals/[id]/route.ts`, `.../habitats/route.ts` | `GET`/`POST` on the collection, `GET`/`PUT`/`DELETE` on one animal, `GET` habitats. All six Linx operations are proxied — no further route handler is needed by any later story. |
 | Browser-side client | `web/src/lib/api/client.ts` | `get` / `post` / `put` / `del` against same-origin `/api/*` only; failures become an `APIError` whose message comes from the response envelope, carrying `messageType`. No credential and no change-name parameter exists. |
 | Linx base-URL default | `web/src/lib/utils/constants.ts` | `LINX_API_BASE_URL_DEFAULT` — server-consumed only. (Replaces the template's `API_BASE_URL`.) |
+| Browser endpoint paths | `web/src/lib/api/endpoints.ts` | `ANIMALS_ENDPOINT`, `HABITATS_ENDPOINT`, `animalEndpoint(id)` — the app's own root-relative `/api/*` paths. Never write an endpoint string inline. |
+| Screen routes | `web/src/lib/routes.ts` | `ANIMALS_ROUTE` (`/`), `HABITATS_ROUTE`, `animalDetailRoute(id)` — the pages a person navigates to. |
+| App shell | `web/src/components/layout/AppShell.tsx` + `AppNav.tsx` | Owns the **single** `<main>` landmark and the only `navigation` landmark (Animals / Habitats, current section marked with `aria-current="page"`). Mounted by `layout.tsx` inside `ToastProvider`. **No page may render its own `<main>`.** |
+| Read-state components | `web/src/components/feedback/` | `LoadingState` (`role="status"` + an accessible name saying what is loading, over Shadcn skeletons), `EmptyState` (quiet card — no `alert`, no retry), `FailureState` (destructive `Alert` + an adjacent Retry button, outside the live region). Every read screen renders these three rather than inventing its own; keep each screen's empty and failure wording distinct from one another. |
+| Animal roster table | `web/src/components/animals/AnimalRosterTable.tsx` | Shadcn `Table` with Name / Species / Age / Habitat / Diet; Name is an anchor to `animalDetailRoute(Id)`; absent fields degrade to "Not recorded" (never `undefined`/`NaN`); never re-sorts, never filters, never drops a row. |
+| Roster loading + retry | `web/src/hooks/use-animal-roster.ts` | `useAnimalRoster()` → `{ state: loading \| loaded \| failed, reload }`. One request per attempt (filtering must work over `state.animals` in memory, never re-fetch), `Array.isArray(body.Animals)` shape guard so a non-roster body is a **failure** not an empty zoo, and stale/unmounted responses are discarded. |
+| Read-failure wording | `web/src/lib/api/read-failure.ts` | `describeReadFailure(error)` → one curated sentence (transport failure → `BACKEND_UNREACHABLE_MESSAGE`; an envelope's own message; wrong shape → `UNUSABLE_RESPONSE_MESSAGE`). Also `isAPIError()`. No raw backend/database text reaches a screen. |
 
 ### Generated pre-BUILD for this epic
 
