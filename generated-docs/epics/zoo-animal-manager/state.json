@@ -11,7 +11,8 @@
       "Verify opening an animal that has been removed: the app assumes the backend returns nothing usable for an unknown or deleted animal and shows a clear 'animal not found' page. If the backend instead returns an error or an empty record, you may see a crash or a page of blank fields instead.",
       "Verify a last-changed time against South African local time: the app displays the backend's text exactly as sent, assuming the backend has already converted it. If the value is actually still UTC, every timestamp in the app will read a couple of hours early.",
       "Verify the roster is complete: the app assumes one request returns every animal, already sorted by name, and does all searching and filtering over that full set. If the backend caps or pages the results, the list — and every search you run on it — silently covers only the first slice of your animals.",
-      "Verify deleting an animal that is already gone: the backend has no error path on delete, so it is likely to report success. Confirm what actually happens so the app's confirmation message isn't misleading."
+      "Verify deleting an animal that is already gone: the backend has no error path on delete, so it is likely to report success. Confirm what actually happens so the app's confirmation message isn't misleading.",
+      "Open the browser's network tab on the animal list and confirm the requests go to your own app (a path starting /api/), NOT to localhost:10002. The starter template prefixed every request with the backend's address, and neither the automated tests nor the browser mocks can catch that mistake — but the real app would leak the backend address and fail with a CORS error. This is the one thing most worth eyeballing in the network tab."
     ],
     "manualTestResults": []
   },
