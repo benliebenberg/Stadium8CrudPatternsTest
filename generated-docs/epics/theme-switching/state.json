@@ -8,23 +8,26 @@
       "zoo-animal-manager"
     ],
     "introducesSharedSurface": true,
-    "unverifiedAssumptions": [],
+    "unverifiedAssumptions": [
+      "With JavaScript disabled the app renders in LIGHT, because the pre-paint script is the only thing that can know the right theme and the server renders no theme class at all. Reasonable now that light is a first-class theme, but it is an interpretation of \"dark remains the default look\" — worth a nod.",
+      "A theme chosen in one tab does not update another already-open tab until it reloads; the choice is read once per document load. No acceptance criterion covers cross-tab behaviour, so it was left out rather than guessed at."
+    ],
     "manualTestResults": []
   },
   "phase": "BUILD",
   "stories": {
     "1": {
-      "status": "pending",
+      "status": "complete",
       "commit": null,
       "e2eStatus": "deferred",
-      "startedAt": null,
-      "completedAt": null
+      "startedAt": "2026-07-30T13:10:00.000Z",
+      "completedAt": "2026-07-30T13:35:00.000Z"
     },
     "2": {
-      "status": "pending",
+      "status": "in-progress",
       "commit": null,
       "e2eStatus": "deferred",
-      "startedAt": null,
+      "startedAt": "2026-07-30T13:37:00.000Z",
       "completedAt": null
     },
     "3": {
