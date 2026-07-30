@@ -6,12 +6,25 @@
  */
 
 /**
- * API base URL - Retrieved from environment variable
- * Set NEXT_PUBLIC_API_BASE_URL in your .env.local file
- * Default: http://localhost:8042 (adjust as needed)
+ * Fallback base address of the Linx CrudPatterns backend — **server-side use only**.
+ *
+ * Overridden at runtime by the `NEXT_PUBLIC_API_BASE_URL` env var, which is read
+ * per-request inside web/src/lib/api/server/linx-client.ts (never captured into a
+ * module-level constant, so a server restart is not needed to re-read configuration).
+ *
+ * This value is `http://localhost:10002/crud-patterns` — WITH the `/crud-patterns`
+ * prefix. The OpenAPI document embedded in the Linx solution declares
+ * `http://localhost:10002`, which is wrong: an unauthenticated probe of
+ * `/crud-patterns/v1/habitats` returned 401 (route exists, auth enforced) while
+ * `/v1/habitats` returned 404. The Linx runtime's own Base URI setting wins
+ * (project.md §Data Source & Backend Integration).
+ *
+ * **Nothing the browser runs may consume this.** The browser talks only to this app's
+ * own same-origin `/api/*` route handlers; those handlers are the only code that
+ * reaches Linx, because the shared API key must never leave the server and the Linx
+ * host emits no CORS headers (project.md §Authentication).
  */
-export const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8042';
+export const LINX_API_BASE_URL_DEFAULT = 'http://localhost:10002/crud-patterns';
 
 /**
  * Default pagination settings

@@ -1,0 +1,348 @@
+# CrudPatterns API — canonical specification
+#
+# PROVENANCE: extracted verbatim from the Linx 6 solution's own OpenAPI document, which is stored
+# as a design-time string property inside the REST service definition:
+#
+#   documentation/BackendLinx6Api/CrudPatterns.project/CrudPatterns.folder/Api.folder/
+#     CrudPatterns.service/CrudPatterns.properties
+#       -> ServiceData.Properties[Id = "API definition"].Value
+#
+# This is a user-provided contract, not an agent-designed one. Every operation and schema below is
+# the backend's own declaration.
+#
+# TWO CORRECTIONS were applied during extraction:
+#
+#   1. servers[0].url  —  the embedded document declares `http://localhost:10002`, which is WRONG.
+#      The Linx runtime binds under its "Base URI" setting (App.settings -> CrudPatternsBaseUri),
+#      which is `http://localhost:10002/crud-patterns`. Proven empirically by unauthenticated probe:
+#           GET http://localhost:10002/crud-patterns/v1/habitats  ->  401  (route exists, auth enforced)
+#           GET http://localhost:10002/v1/habitats                ->  404  (no such route)
+#      A live authenticated request against the corrected URL returned 200. The runtime setting wins.
+#
+#   2. Numeric `example:` values were unquoted (the source had `example: '1'` on integer-typed
+#      fields, a type mismatch that trips code generators). No schema types were changed.
+#
+# KNOWN GAP, deliberately not "fixed" here: no schema declares a `required:` array, so every field
+# is formally optional. That is a faithful reflection of what the backend guarantees — it performs
+# NO field validation and inserts straight to the database. The application's own required-field
+# rules live in the Zod schemas under web/src/lib/validation/, not here.
+#
+# ERROR CONVENTION: failures arrive as HTTP 500 carrying a DefaultResponse body, NOT as 4xx.
+# `MessageType` is the only reliable discriminator — "Success", "Warning" (a business rejection,
+# e.g. a duplicate name) or "Error" (a technical failure, with the raw database message in
+# Messages[0]). Never branch on status code alone.
+
+openapi: 3.0.1
+info:
+  title: CrudPatterns
+  version: 1.0.0
+servers:
+  - url: http://localhost:10002/crud-patterns
+paths:
+  /v1/animals:
+    get:
+      tags:
+        - Animals
+      security:
+        - ApiKeyAuth: []
+      operationId: AnimalGetList
+      summary: Get a list of all animals
+      description: Get a list of all animals
+      responses:
+        '200':
+          description: OK (200)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnimalReadList'
+        '401':
+          description: Unauthorized (401)
+        '500':
+          description: Internal Server Error (500)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DefaultResponse'
+    post:
+      tags:
+        - Animals
+      security:
+        - ApiKeyAuth: []
+      operationId: AnimalCreate
+      summary: Create a new animal
+      parameters:
+        - name: LastChangedUser
+          in: header
+          description: Name of user performing the action
+          required: true
+          schema:
+            type: string
+            example: 'John Doe'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnimalWrite'
+      responses:
+        '200':
+          description: OK (200)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DefaultResponse'
+        '401':
+          description: Unauthorized (401)
+        '500':
+          description: Internal Server Error (500)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DefaultResponse'
+
+  /v1/animals/{Id}:
+    get:
+      tags:
+        - Animals
+      security:
+        - ApiKeyAuth: []
+      operationId: AnimalGetById
+      summary: Get a specific animal by Id
+      description: Get a specific animal by Id
+      parameters:
+        - name: Id
+          in: path
+          description: Unique Id of Animal
+          required: true
+          schema:
+            type: integer
+            example: 1
+      responses:
+        '200':
+          description: OK (200)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnimalRead'
+        '401':
+          description: Unauthorized (401)
+        '500':
+          description: Internal Server Error (500)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DefaultResponse'
+
+    put:
+      tags:
+        - Animals
+      security:
+        - ApiKeyAuth: []
+      operationId: AnimalUpdate
+      summary: Update an existing animal by Id
+      parameters:
+        - name: Id
+          in: path
+          description: Id of the animal to update
+          required: true
+          schema:
+            type: integer
+        - name: LastChangedUser
+          in: header
+          description: Name of user performing the action
+          required: true
+          schema:
+            type: string
+            example: 'John Doe'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnimalWrite'
+      responses:
+        '200':
+          description: OK (200)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DefaultResponse'
+        '401':
+          description: Unauthorized (401)
+        '500':
+          description: Internal Server Error (500)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DefaultResponse'
+    delete:
+      tags:
+        - Animals
+      security:
+        - ApiKeyAuth: []
+      operationId: AnimalDelete
+      summary: Delete an animal by Id
+      parameters:
+        - name: Id
+          in: path
+          description: Id of the animal to delete
+          required: true
+          schema:
+            type: integer
+        - name: LastChangedUser
+          in: header
+          description: Name of user performing the action
+          required: true
+          schema:
+            type: string
+            example: 'John Doe'
+      responses:
+        '200':
+          description: OK (200)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DefaultResponse'
+        '401':
+          description: Unauthorized (401)
+        '500':
+          description: Internal Server Error (500)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DefaultResponse'
+
+  /v1/habitats:
+    get:
+      tags:
+        - Habitats
+      security:
+        - ApiKeyAuth: []
+      operationId: HabitatGetList
+      summary: Get a list of all habitats
+      description: Get a list of all habitats
+      responses:
+        '200':
+          description: OK (200)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HabitatReadList'
+        '401':
+          description: Unauthorized (401)
+        '500':
+          description: Internal Server Error (500)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DefaultResponse'
+
+components:
+  schemas:
+    DefaultResponse:
+      type: object
+      properties:
+        Id:
+          type: integer
+        MessageType:
+          type: string
+          description: >-
+            "Success", "Warning" (business rejection, e.g. a duplicate name) or "Error"
+            (technical failure). The only reliable success/failure discriminator — a 500
+            may carry any of these.
+        Messages:
+          type: array
+          items:
+            type: string
+    AnimalRead:
+      type: object
+      properties:
+        Id:
+          type: integer
+          example: 1
+        Name:
+          type: string
+          example: 'Dog'
+        Species:
+          type: string
+          example: 'Panthera Leo'
+        Age:
+          type: integer
+          example: 12
+        HabitatId:
+          type: integer
+          example: 4
+        HabitatName:
+          type: string
+          description: >-
+            Joined from Habitat on read — never written by the client. Because the backend
+            uses an INNER JOIN, an animal whose HabitatId matches no habitat is dropped from
+            list results entirely.
+          example: 'Forest'
+        Diet:
+          type: string
+          example: 'Carnivore'
+        LastChangedUser:
+          type: string
+          example: 'John Doe'
+        LastChangedDate:
+          type: string
+          description: >-
+            Pre-formatted text, ALREADY converted from UTC to South Africa Standard Time by
+            the backend (its SQL does AT TIME ZONE 'UTC' AT TIME ZONE 'South Africa Standard
+            Time'). Display verbatim — never re-parse as UTC or convert again.
+          example: '2024-05-02 12:00:21'
+    AnimalReadList:
+      type: object
+      properties:
+        Animals:
+          type: array
+          items:
+            $ref: '#/components/schemas/AnimalRead'
+    AnimalWrite:
+      type: object
+      properties:
+        Name:
+          type: string
+          example: 'Dog'
+        Species:
+          type: string
+          example: 'Panthera Leo'
+        Age:
+          type: integer
+          example: 12
+        HabitatId:
+          type: integer
+          example: 4
+        Diet:
+          type: string
+          example: 'Carnivore'
+    HabitatRead:
+      type: object
+      properties:
+        Id:
+          type: integer
+          example: 4
+        Name:
+          type: string
+          example: 'Forest'
+        LastChangedUser:
+          type: string
+          example: 'John Doe'
+        LastChangedDate:
+          type: string
+          description: Pre-formatted SAST text — see AnimalRead.LastChangedDate.
+          example: '2024-05-02 12:00:21'
+    HabitatReadList:
+      type: object
+      properties:
+        Habitats:
+          type: array
+          items:
+            $ref: '#/components/schemas/HabitatRead'
+
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key

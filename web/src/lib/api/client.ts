@@ -1,24 +1,35 @@
 /**
- * Base API Client Template
+ * The browser-side API client — this app's OWN `/api/*` route handlers, nothing else.
  *
- * A reusable fetch wrapper providing:
- * - Error handling for common HTTP status codes
- * - Automatic JSON parsing
- * - Request/response logging for development
- * - Type-safe API responses
+ * A fetch wrapper providing JSON parsing, query-string building, development logging, and
+ * one failure model driven by the backend's `DefaultResponse` envelope.
  *
- * USAGE:
- * 1. Update API_BASE_URL in constants.ts or environment variables
- * 2. Define your API endpoints as functions that call apiClient
- * 3. Customize error handling and logging as needed
+ * TWO RULES THIS MODULE ENFORCES, both structural rather than stylistic:
+ *
+ * 1. **Endpoints are same-origin paths.** Every endpoint must start with `/`, and no base
+ *    URL is prefixed onto it. The browser talks only to this app's route handlers; those
+ *    handlers are the only code that reaches the Linx backend, because the shared API key
+ *    must never leave the server and the Linx host emits no CORS headers (project.md
+ *    §Authentication, architecture.md § Decision 1). An absolute URL passed here is
+ *    rejected loudly rather than sent — that mistake would leak the backend's address into
+ *    the browser and then fail on CORS anyway.
+ * 2. **No credential, and no `lastChangedUser`, is accepted from a caller.** Both are
+ *    server-injected configuration (brief BR2/BR3). There is nothing to pass in and
+ *    nothing to configure here.
+ *
+ * Failures are read from the response body, never from the status code: this backend
+ * reports business rejections and technical faults alike as HTTP 500 carrying a
+ * `DefaultResponse` (project.md NFR-base-6, architecture.md § Decision 2). Note the
+ * consequence for writes — the app's route handlers normalise every write to HTTP 200 with
+ * that envelope, so a write RESOLVES here and the caller branches on `MessageType`; only a
+ * genuine transport failure rejects (architecture.md § Decision 3).
  */
 
-import { API_BASE_URL } from '@/lib/utils/constants';
+import { parseWriteEnvelope } from '@/lib/api/write-result';
 import type {
   APIError,
+  APIMessageTypeValue,
   APIRequestConfig,
-  DefaultResponse,
-  HTTPStatusCode,
   QueryParams,
 } from '@/types/api';
 
@@ -34,24 +45,16 @@ export async function apiClient<T = unknown>(
   endpoint: string,
   config: APIRequestConfig = {},
 ): Promise<T> {
-  const {
-    params,
-    lastChangedUser,
-    isBinaryResponse,
-    requiresAuth,
-    ...fetchConfig
-  } = config;
+  const { params, isBinaryResponse, ...fetchConfig } = config;
 
-  // Build full URL with query parameters
+  // Build the same-origin URL with query parameters
   const url = buildUrl(endpoint, params);
 
   // Build headers
   const headers = buildHeaders(
     fetchConfig.method,
-    lastChangedUser,
     fetchConfig.headers,
     fetchConfig.body ?? undefined,
-    requiresAuth,
   );
 
   // Log request in development
@@ -91,7 +94,18 @@ export async function apiClient<T = unknown>(
 }
 
 /**
- * Builds the full URL with query parameters.
+ * Builds the request URL with query parameters.
+ *
+ * **The endpoint is used as given — no base URL is prefixed onto it.** `'/api/animals'`
+ * resolves to `/api/animals`: a same-origin request to this app's own route handler, which
+ * is the only thing that may talk to the Linx backend. Prefixing a backend base URL here
+ * was the template's shape and is precisely the bug this project cannot have — it would put
+ * the backend's address in the browser, and the request would then fail on CORS because the
+ * Linx host sends no `Access-Control-Allow-Origin` (architecture.md § Decision 1).
+ *
+ * Anything that is not a root-relative path is rejected rather than sent, so that mistake
+ * cannot be made silently: both test layers can otherwise pass while the deployed app is
+ * broken (Vitest mocks this module; a Playwright glob matches the wrong absolute URL too).
  *
  * Array values serialize as repeated params (`['a','b']` → `?k=a&k=b`); for
  * `explode: false` APIs, join at the endpoint-function layer. Empty arrays and
@@ -101,10 +115,20 @@ export async function apiClient<T = unknown>(
  * never a meaningful filter selection.
  */
 function buildUrl(endpoint: string, params?: QueryParams): string {
-  const baseUrl = `${API_BASE_URL}${endpoint}`;
+  // `//host/path` is protocol-relative — a cross-origin request wearing a relative
+  // path's clothing — so it is rejected alongside absolute URLs.
+  if (!endpoint.startsWith('/') || endpoint.startsWith('//')) {
+    throw new Error(
+      `API endpoints must be same-origin paths starting with "/", but got "${endpoint}". ` +
+        'The browser may only call this app\'s own route handlers (e.g. "/api/animals"); ' +
+        'they are what reach the backend, server-side.',
+    );
+  }
+
+  const path = endpoint;
 
   if (!params) {
-    return baseUrl;
+    return path;
   }
 
   const queryParams = new URLSearchParams();
@@ -122,21 +146,20 @@ function buildUrl(endpoint: string, params?: QueryParams): string {
   });
 
   const queryString = queryParams.toString();
-  return queryString ? `${baseUrl}?${queryString}` : baseUrl;
+  return queryString ? `${path}?${queryString}` : path;
 }
 
 /**
- * Builds request headers
- * Only sets Content-Type when there's a request body
- * Injects auth header from getAuthHeader() when requiresAuth is true and an
- * explicit override isn't already present in customHeaders
+ * Builds request headers. Only sets Content-Type when there's a request body.
+ *
+ * No credential is attached, and no `LastChangedUser` is attached. Both are injected
+ * server-side by the route handlers this client calls (brief BR2/BR3) — the browser has
+ * neither value and must not be able to influence either.
  */
 function buildHeaders(
   method?: string,
-  lastChangedUser?: string,
   customHeaders?: HeadersInit,
   body?: BodyInit,
-  requiresAuth?: boolean,
 ): Record<string, string> {
   const baseHeaders: Record<string, string> = {};
 
@@ -165,135 +188,54 @@ function buildHeaders(
     baseHeaders['Content-Type'] = 'application/json';
   }
 
-  // Add custom headers (e.g., LastChangedUser for audit trails)
-  if (lastChangedUser) {
-    baseHeaders['LastChangedUser'] = lastChangedUser;
-  }
-
-  // Inject auth header when the caller asked for it and the header is configured
-  // via env vars captured during INTAKE Step 4b. Caller-provided headers win.
-  if (requiresAuth) {
-    const authHeader = getAuthHeader();
-    if (authHeader && !(authHeader.name in baseHeaders)) {
-      baseHeaders[authHeader.name] = authHeader.value;
-    }
-  }
-
   return baseHeaders;
 }
 
 /**
- * Reads auth-header configuration from env vars captured by api-connectivity-agent
- * during INTAKE Step 4b. Returns null when no token is configured (the request
- * proceeds without an Authorization header — useful in mock mode and on public
- * endpoints).
+ * Turns a failed response into an `APIError`, reading the **body** for the reason.
  *
- * Env var contract:
- * - NEXT_PUBLIC_API_AUTH_HEADER (default: "Authorization")
- * - NEXT_PUBLIC_API_AUTH_VALUE_PREFIX (default: "Bearer ", trailing space optional)
- * - NEXT_PUBLIC_API_TOKEN (the credential value)
+ * There is deliberately no status-code switch. This backend does not use status codes
+ * conventionally: it answers with HTTP 500 for a business rejection, for a technical fault,
+ * and occasionally for a success, always carrying a `DefaultResponse` envelope
+ * (project.md NFR-base-6, architecture.md § Decision 2). A switch on 401/403/404/500 —
+ * which is what the template shipped — invents distinctions the backend does not make and
+ * discards the one thing that does carry meaning: `MessageType` and `Messages`.
  *
- * NEXT_PUBLIC_* vars are baked into the browser bundle. For production apps that
- * call a real backend with sensitive tokens, prefer a BFF or Next.js API route
- * proxy so tokens stay server-side. This helper is intended for local dev against
- * a dev backend where the convenience outweighs the exposure.
- */
-export function getAuthHeader(): { name: string; value: string } | null {
-  const token = process.env.NEXT_PUBLIC_API_TOKEN;
-  if (!token) return null;
-
-  const name = process.env.NEXT_PUBLIC_API_AUTH_HEADER || 'Authorization';
-  const rawPrefix = process.env.NEXT_PUBLIC_API_AUTH_VALUE_PREFIX;
-  const prefix =
-    rawPrefix === undefined
-      ? 'Bearer '
-      : rawPrefix.length > 0 && !rawPrefix.endsWith(' ')
-        ? `${rawPrefix} `
-        : rawPrefix;
-
-  return { name, value: `${prefix}${token}` };
-}
-
-/**
- * Handles error responses from the API
- * Customize this function based on your API's error response format
+ * So the envelope's own wording becomes the error message, its `MessageType` is carried on
+ * the error so a caller can tell a rejection from a fault, and the status is recorded for
+ * diagnosis only. When there is no envelope to read, the status is all there is, and the
+ * message says so plainly rather than guessing at a cause.
  */
 async function handleErrorResponse(
   response: Response,
   url: string,
 ): Promise<never> {
-  const statusCode = response.status as HTTPStatusCode;
+  const envelope = parseWriteEnvelope(await readBodySafely(response));
+  const messages = envelope?.Messages ?? [];
 
-  // Try to extract error details from response body
-  let errorMessages: string[] = [];
-  let defaultMessage = `HTTP ${statusCode}: ${response.statusText}`;
+  const message =
+    messages[0] ??
+    `The request to ${url} failed (HTTP ${response.status}). Please try again.`;
 
+  throw createAPIError(
+    message,
+    response.status,
+    messages.length > 0 ? messages : [message],
+    url,
+    envelope?.MessageType,
+  );
+}
+
+/**
+ * Reads a response body as JSON, resolving to `undefined` when there is none or it is not
+ * JSON — a failure response is not guaranteed to carry a body at all, and a parse error
+ * while explaining a failure must not replace the failure.
+ */
+async function readBodySafely(response: Response): Promise<unknown> {
   try {
-    const contentType = response.headers.get('content-type');
-    if (contentType && contentType.includes('application/json')) {
-      const errorData = (await response.json()) as DefaultResponse;
-
-      if (errorData.Messages && errorData.Messages.length > 0) {
-        errorMessages = errorData.Messages;
-        defaultMessage = errorMessages[0];
-      } else if (errorData.MessageType) {
-        defaultMessage = `${errorData.MessageType}: ${defaultMessage}`;
-      }
-    }
+    return (await response.json()) as unknown;
   } catch {
-    // If parsing fails, use default error message
-  }
-
-  // Handle specific status codes
-  // Customize these messages based on your application's needs
-  switch (statusCode) {
-    case 401:
-      throw createAPIError(
-        'Unauthorized: Please log in to continue',
-        statusCode,
-        errorMessages.length > 0
-          ? errorMessages
-          : ['Your session may have expired. Please log in again.'],
-        url,
-      );
-
-    case 403:
-      throw createAPIError(
-        'Forbidden: You do not have permission to perform this action',
-        statusCode,
-        errorMessages.length > 0 ? errorMessages : ['Access denied.'],
-        url,
-      );
-
-    case 404:
-      throw createAPIError(
-        'Not Found: The requested resource does not exist',
-        statusCode,
-        errorMessages.length > 0 ? errorMessages : ['Resource not found.'],
-        url,
-      );
-
-    case 500:
-      throw createAPIError(
-        'Internal Server Error: Something went wrong on the server',
-        statusCode,
-        errorMessages.length > 0
-          ? errorMessages
-          : [
-              'Please try again later or contact support if the problem persists.',
-            ],
-        url,
-      );
-
-    default:
-      throw createAPIError(
-        defaultMessage,
-        statusCode,
-        errorMessages.length > 0
-          ? errorMessages
-          : [`Request failed with status ${statusCode}`],
-        url,
-      );
+    return undefined;
   }
 }
 
@@ -338,19 +280,24 @@ async function handleSuccessResponse<T>(
 }
 
 /**
- * Creates a standardized APIError object
+ * Creates a standardized APIError object.
+ *
+ * `messageType` is present only when the failure carried a `DefaultResponse` envelope, so a
+ * caller can tell a business rejection from a technical fault without re-reading the body.
  */
 function createAPIError(
   message: string,
   statusCode: number,
   details: string[],
   endpoint: string,
+  messageType?: APIMessageTypeValue,
 ): APIError {
   return {
     message,
     statusCode,
     details,
     endpoint,
+    messageType,
   };
 }
 
@@ -420,70 +367,51 @@ function logResponse(response: Response): void {
   }
 }
 
-interface ClientCallOptions {
-  requiresAuth?: boolean;
-}
-
 /**
- * Convenience method for GET requests
+ * GET a same-origin endpoint — e.g. `get<AnimalReadList>('/api/animals')`.
  */
 export async function get<T>(
   endpoint: string,
   params?: QueryParams,
-  options?: ClientCallOptions,
 ): Promise<T> {
   return apiClient<T>(endpoint, {
     method: 'GET',
     params,
-    requiresAuth: options?.requiresAuth,
   });
 }
 
 /**
- * Convenience method for POST requests
+ * POST to a same-origin endpoint.
+ *
+ * There is no change-name parameter: `LastChangedUser` is a required backend header, but it
+ * is server-injected deployment configuration, not something a caller supplies (brief
+ * R5/BR3). The route handler attaches it.
  */
-export async function post<T>(
-  endpoint: string,
-  body?: unknown,
-  lastChangedUser?: string,
-  options?: ClientCallOptions,
-): Promise<T> {
+export async function post<T>(endpoint: string, body?: unknown): Promise<T> {
   return apiClient<T>(endpoint, {
     method: 'POST',
     body: JSON.stringify(body),
-    lastChangedUser,
-    requiresAuth: options?.requiresAuth,
   });
 }
 
 /**
- * Convenience method for PUT requests
+ * PUT to a same-origin endpoint. As with `post`, the change-name is server-injected.
  */
-export async function put<T>(
-  endpoint: string,
-  body?: unknown,
-  lastChangedUser?: string,
-  options?: ClientCallOptions,
-): Promise<T> {
+export async function put<T>(endpoint: string, body?: unknown): Promise<T> {
   return apiClient<T>(endpoint, {
     method: 'PUT',
     body: JSON.stringify(body),
-    lastChangedUser,
-    requiresAuth: options?.requiresAuth,
   });
 }
 
 /**
- * Convenience method for DELETE requests
+ * DELETE a same-origin endpoint — e.g. `del<DefaultResponse>('/api/animals/4')`.
+ *
+ * Carries no body: the record is identified by the path, and the change-name is a
+ * server-injected header (brief R5/BR3).
  */
-export async function del<T>(
-  endpoint: string,
-  lastChangedUser?: string,
-  options?: ClientCallOptions,
-): Promise<T> {
+export async function del<T>(endpoint: string): Promise<T> {
   return apiClient<T>(endpoint, {
     method: 'DELETE',
-    lastChangedUser,
-    requiresAuth: options?.requiresAuth,
   });
 }
