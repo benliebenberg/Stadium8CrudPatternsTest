@@ -76,11 +76,11 @@
       "completedAt": "2026-07-30T14:00:00.000Z"
     },
     "9": {
-      "status": "in-progress",
+      "status": "complete",
       "commit": null,
       "e2eStatus": "deferred",
       "startedAt": "2026-07-30T14:02:00.000Z",
-      "completedAt": null
+      "completedAt": "2026-07-30T14:32:00.000Z"
     }
   },
   "halt": null,

@@ -34,9 +34,10 @@
  */
 
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 
 import { AnimalRecord } from '@/components/animals/AnimalRecord';
+import { RemoveAnimalAction } from '@/components/animals/RemoveAnimalAction';
 import { FailureState } from '@/components/feedback/FailureState';
 import { LoadingState } from '@/components/feedback/LoadingState';
 import { Button } from '@/components/ui/button';
@@ -96,6 +97,7 @@ function headingFor(state: AnimalDetailState): string {
 
 export default function AnimalDetailPage() {
   const params = useParams();
+  const router = useRouter();
   const id = routeSegment(params.id);
   const { state, reload } = useAnimalDetail(id);
 
@@ -115,19 +117,26 @@ export default function AnimalDetailPage() {
         <h1 className="font-secondary text-h3 tracking-tight">
           {headingFor(state)}
         </h1>
-        {/* Record-level actions. Remove (story 9) joins Edit here. */}
+        {/* Record-level actions: change this animal, or remove it. Both only once the record is
+            here — offering either over a not-found page or a failed load would act on nothing. */}
         {state.status === 'loaded' && (
           <div className="flex flex-wrap gap-3">
             {/* A real anchor, not a button that pushes a route: the edit form for one animal is
                 an address, so it has to be deep-linkable, middle-clickable and openable in a new
                 tab. `Button asChild` gives the anchor the action styling without turning it into
-                a `<button>`.
-
-                Only when the record is here — offering "Edit animal" over a not-found page or a
-                failed load would lead to a form with nothing to prefill it. */}
+                a `<button>`. */}
             <Button asChild variant="outline" className="text-foreground">
               <Link href={animalEditRoute(id)}>{EDIT_ANIMAL}</Link>
             </Button>
+            {/* Removal is the opposite: a button, never an address, so an unrecoverable delete
+                can never be reached by navigating to a URL. It owns its own confirmation; this
+                page decides only where a removed animal leaves the reader — the roster, which
+                re-reads itself as it mounts, so the animal is visibly gone (R23). */}
+            <RemoveAnimalAction
+              animalId={id}
+              animalName={animalDisplayName(state.animal)}
+              onRemoved={() => router.push(ANIMALS_ROUTE)}
+            />
           </div>
         )}
       </div>

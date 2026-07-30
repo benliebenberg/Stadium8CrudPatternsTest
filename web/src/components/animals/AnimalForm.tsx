@@ -111,9 +111,10 @@ import {
 } from '@/components/ui/select';
 import { useToast } from '@/contexts/ToastContext';
 import { useHabitats } from '@/hooks/use-habitats';
-import { BACKEND_UNREACHABLE_MESSAGE } from '@/lib/api/failure-messages';
-import { isAPIError } from '@/lib/api/read-failure';
-import { interpretWriteResponse } from '@/lib/api/write-result';
+import {
+  describeUnansweredWrite,
+  interpretWriteResponse,
+} from '@/lib/api/write-result';
 import {
   animalFormSchema,
   animalWriteFromForm,
@@ -166,12 +167,6 @@ const REJECTION_GUIDANCE = 'Choose a different name and save again.';
 /** A stable identity for "no habitats yet", so the picker does not re-render on every keystroke. */
 const NO_HABITATS: readonly HabitatRead[] = [];
 
-/**
- * `statusCode: 0` is how `client.ts` records "no response at all" — the one case a write
- * rejects instead of resolving (architecture.md Decision 3).
- */
-const TRANSPORT_FAILURE_STATUS = 0;
-
 interface AnimalFormProps {
   /**
    * The submit control's wording — `"Add animal"` when adding, `"Save changes"` when editing.
@@ -213,25 +208,6 @@ function assignableHabitats(
  */
 function habitatChoiceLabel(habitat: HabitatRead): string {
   return habitat.Name ?? `Habitat ${String(habitat.Id)}`;
-}
-
-/**
- * The detail to show when the write got no answer at all — the only case the promise rejects.
- *
- * The client's own transport wording reads like a stack trace, so the shared
- * backend-unreachable sentence is used for it; anything else already came through the route
- * handler's envelope as curated text.
- */
-function unansweredWriteDetail(error: unknown): string {
-  if (
-    isAPIError(error) &&
-    typeof error.statusCode === 'number' &&
-    error.statusCode !== TRANSPORT_FAILURE_STATUS
-  ) {
-    return error.message;
-  }
-
-  return BACKEND_UNREACHABLE_MESSAGE;
 }
 
 /**
@@ -332,8 +308,9 @@ export function AnimalForm({
       }
     } catch (error) {
       // No answer at all — the one case a write rejects rather than resolving. Still a technical
-      // failure as far as the user is concerned.
-      setFailure([unansweredWriteDetail(error)]);
+      // failure as far as the user is concerned. The wording is the shared one every write
+      // surface uses for this event.
+      setFailure([describeUnansweredWrite(error)]);
     }
 
     setSaving(false);

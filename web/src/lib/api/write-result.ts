@@ -19,7 +19,11 @@
  * over" is exactly what the UI needs, and an exception flattens it.
  */
 
-import { unusableResponseMessages } from '@/lib/api/failure-messages';
+import {
+  BACKEND_UNREACHABLE_MESSAGE,
+  unusableResponseMessages,
+} from '@/lib/api/failure-messages';
+import { isAPIError } from '@/lib/api/read-failure';
 import { APIMessageType, type APIMessageTypeValue } from '@/types/api';
 import type { DefaultResponse } from '@/types/api';
 
@@ -43,6 +47,12 @@ export type LinxWriteResult =
     }
   | { readonly outcome: 'rejected'; readonly messages: string[] }
   | { readonly outcome: 'failed'; readonly messages: string[] };
+
+/**
+ * `statusCode: 0` is how `client.ts` records "no response at all" — a transport failure rather
+ * than an answer the backend chose to give.
+ */
+const TRANSPORT_FAILURE_STATUS = 0;
 
 /** Wording used when the backend reported an outcome but attached no message to it. */
 const OUTCOME_WITHOUT_MESSAGE: Record<APIMessageTypeValue, string> = {
@@ -157,6 +167,30 @@ export function writeResultToEnvelope(
         Messages: result.messages,
       };
   }
+}
+
+/**
+ * The detail to show when a write got **no answer at all** — the single case a browser-side
+ * write rejects instead of resolving (architecture.md § Decision 3), because the app's own
+ * route handler never got far enough to return an envelope.
+ *
+ * Shared by every write surface (the add/edit form, the removal confirmation) so one event has
+ * one wording: the client's own transport text reads like a stack trace, so the curated
+ * backend-unreachable sentence stands in for it, while anything that DID come back through the
+ * route handler's envelope is already curated and is passed on as it is.
+ *
+ * @param error What the write rejected with.
+ */
+export function describeUnansweredWrite(error: unknown): string {
+  if (
+    isAPIError(error) &&
+    typeof error.statusCode === 'number' &&
+    error.statusCode !== TRANSPORT_FAILURE_STATUS
+  ) {
+    return error.message;
+  }
+
+  return BACKEND_UNREACHABLE_MESSAGE;
 }
 
 /** True when the value is one of the backend's three `MessageType` strings, exactly. */

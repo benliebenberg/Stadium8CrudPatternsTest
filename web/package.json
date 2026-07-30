@@ -29,7 +29,7 @@
     "postinstall": "node scripts/welcome.js"
   },
   "dependencies": {
-    "@hookform/resolvers": "^5.0.1",
+    "@hookform/resolvers": "^5.5.7",
     "@radix-ui/react-label": "^2.1.8",
     "@radix-ui/react-select": "^2.2.5",
     "@radix-ui/react-slot": "^1.2.4",
@@ -40,9 +40,9 @@
     "radix-ui": "^1.6.7",
     "react": "19.2.0",
     "react-dom": "19.2.0",
-    "react-hook-form": "^7.56.4",
+    "react-hook-form": "^7.83.0",
     "tailwind-merge": "^3.3.0",
-    "zod": "^3.25.23"
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.11.3",
