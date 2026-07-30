@@ -12,18 +12,19 @@
       "Verify a last-changed time against South African local time: the app displays the backend's text exactly as sent, assuming the backend has already converted it. If the value is actually still UTC, every timestamp in the app will read a couple of hours early.",
       "Verify the roster is complete: the app assumes one request returns every animal, already sorted by name, and does all searching and filtering over that full set. If the backend caps or pages the results, the list — and every search you run on it — silently covers only the first slice of your animals.",
       "Verify deleting an animal that is already gone: the backend has no error path on delete, so it is likely to report success. Confirm what actually happens so the app's confirmation message isn't misleading.",
-      "Open the browser's network tab on the animal list and confirm the requests go to your own app (a path starting /api/), NOT to localhost:10002. The starter template prefixed every request with the backend's address, and neither the automated tests nor the browser mocks can catch that mistake — but the real app would leak the backend address and fail with a CORS error. This is the one thing most worth eyeballing in the network tab."
+      "Open the browser's network tab on the animal list and confirm the requests go to your own app (a path starting /api/), NOT to localhost:10002. The starter template prefixed every request with the backend's address, and neither the automated tests nor the browser mocks can catch that mistake — but the real app would leak the backend address and fail with a CORS error. This is the one thing most worth eyeballing in the network tab.",
+      "BEFORE manual testing: put your backend API key into API_KEY in web/.env.local. That file was rewritten during the build and the key slot is empty (the file is git-ignored, so nothing was ever committed). Until you fill it in, every screen will correctly show its 'could not reach the backend' message rather than data — which is the app working properly, but looks identical to a broken app."
     ],
     "manualTestResults": []
   },
   "phase": "BUILD",
   "stories": {
     "1": {
-      "status": "pending",
+      "status": "complete",
       "commit": null,
       "e2eStatus": "deferred",
-      "startedAt": null,
-      "completedAt": null
+      "startedAt": "2026-07-30T09:05:00.000Z",
+      "completedAt": "2026-07-30T09:32:00.000Z"
     },
     "2": {
       "status": "pending",

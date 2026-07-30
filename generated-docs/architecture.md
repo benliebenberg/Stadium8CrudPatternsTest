@@ -60,25 +60,19 @@ first, since Linx exposes no paging parameters.
   `http://localhost:10002/crud-patterns/**` — that pattern silently matches nothing and lets the
   spec hit the real backend.
 
-### ⚠ The `buildUrl()` trap — a green-but-wrong hazard story 1 must close
+### The `buildUrl()` trap — closed in story 1
 
-`buildUrl()` in `web/src/lib/api/client.ts` prefixes `API_BASE_URL` onto **every** endpoint. So a
-browser-side `get('/api/animals')` currently resolves to
-`http://localhost:10002/crud-patterns/api/animals` — the Linx host, with an `/api` path that doesn't
-exist there.
+`buildUrl()` in `web/src/lib/api/client.ts` used to prefix `API_BASE_URL` onto **every** endpoint, so a
+browser-side `get('/api/animals')` resolved to `http://localhost:10002/crud-patterns/api/animals` —
+leaking the Linx base URL to the browser and dying on CORS. Both test layers could pass while the
+deployed app was broken (Vitest mocks `get`; Playwright's glob matches the wrong absolute URL too).
 
-**Both test layers can pass while the deployed app is broken:**
+**Now:** no base URL is prefixed — an endpoint is used as given, and `buildUrl()` **throws** on
+anything that is not a root-relative path (absolute URLs and protocol-relative `//host/...`). The
+resolved URL is asserted in `web/src/__tests__/integration/api-client.test.ts`.
 
-- Vitest mocks `get`, so it never sees the resolved URL.
-- Playwright's `page.route('**/api/animals**')` glob **also matches the wrong absolute URL**, so the
-  interception succeeds either way.
-
-The real app would then leak the Linx base URL to the browser and die on CORS (the Linx host sends no
-`Access-Control-Allow-Origin`).
-
-**Story 1's client rework must keep `/api/*` endpoints relative and same-origin**, and that behaviour
-needs a test asserting the *resolved* URL for an `/api/*` endpoint — not just the endpoint string
-passed in. This is on the manual-test "check these first" list because no existing test catches it.
+Rules that follow: browser-side endpoints are always `/api/...`; the Linx base URL is consumed only by
+`web/src/lib/api/server/linx-client.ts`.
 
 ---
 
@@ -134,6 +128,10 @@ Ordinary HTTP semantics: 200 with the data on success, non-2xx on failure. The A
 the screen renders its failure-with-retry state. There is no envelope on a successful read —
 `GET /v1/animals/{Id}` returns a bare `AnimalRead` (BR8).
 
+As implemented: a successful read's body is passed through **verbatim**; a failed read answers HTTP 500
+with an `Error` envelope (the single failure shape this backend produces, NFR-base-6), and a path
+segment that cannot be an animal id answers 404 with the same envelope shape.
+
 **Not-found is decided from the body, not the status** (BR9 — the backend has no clean 404 path): a
 successful read is an unwrapped `AnimalRead`, so an empty object, or a body carrying `MessageType`,
 means "not found" rather than a retryable failure.
@@ -150,6 +148,18 @@ means "not found" rather than a retryable failure.
 | `DefaultResponse` type | `web/src/types/api.ts` | **Canonical.** Not re-emitted in `api-generated.ts`. |
 | Validation helpers | `web/src/lib/validation/schemas.ts` | `validateRequest()` / `validateRequestAsync()` / `formFieldSchemas`. Add the animal schema alongside these. The template's email/password/userId schemas are unused by this project. |
 | Shadcn primitives | `web/src/components/ui/` | Present: `button`, `card`, `input`, `label`. Add others via the CLI (Critical Rule 1) — never hand-roll. |
+
+### Built in this project — reuse, don't rebuild
+
+| What | Where | Capability |
+|---|---|---|
+| Server tier → Linx | `web/src/lib/api/server/linx-client.ts` | `animalGetList` / `animalGetById` / `habitatGetList` / `animalCreate` / `animalUpdate` / `animalDelete`, named for the spec's `operationId`s. Injects `X-API-Key` + `LastChangedUser`, reads env per request, never throws — returns `LinxReadResult<T>` / `LinxWriteResult`. Server-only: nothing the browser runs may import it. |
+| Write-result interpretation | `web/src/lib/api/write-result.ts` | `interpretWriteResponse(body, status)` → `LinxWriteResult` (`success` / `rejected` / `failed`) from `MessageType` alone; `writeResultToEnvelope()` for route handlers; `parseWriteEnvelope(body)` to recognise a `DefaultResponse` (also how a read detects "not found"). Environment-neutral — the one interpretation both sides of the proxy use. |
+| Backend failure wording | `web/src/lib/api/failure-messages.ts` | `BACKEND_UNREACHABLE_MESSAGE`, `API_KEY_REJECTED_MESSAGE`, `API_KEY_MISSING_MESSAGE`, `unusableResponseMessages(status)`. Never names or echoes the credential. |
+| Route-handler plumbing | `web/src/lib/api/server/route-helpers.ts` | `respondToRead` / `respondToWrite` (Decision 3), `readAnimalWriteBody` (five writable fields only), `parseAnimalId`, and the unknown-id / unreadable-body responses. |
+| App's own API surface | `web/src/app/api/animals/route.ts`, `.../animals/[id]/route.ts`, `.../habitats/route.ts` | `GET`/`POST` on the collection, `GET`/`PUT`/`DELETE` on one animal, `GET` habitats. All six Linx operations are proxied — no further route handler is needed by any later story. |
+| Browser-side client | `web/src/lib/api/client.ts` | `get` / `post` / `put` / `del` against same-origin `/api/*` only; failures become an `APIError` whose message comes from the response envelope, carrying `messageType`. No credential and no change-name parameter exists. |
+| Linx base-URL default | `web/src/lib/utils/constants.ts` | `LINX_API_BASE_URL_DEFAULT` — server-consumed only. (Replaces the template's `API_BASE_URL`.) |
 
 ### Generated pre-BUILD for this epic
 
@@ -194,16 +204,13 @@ Established by story 1's spec; the other eight follow them.
 
 _Open items that later work should close._
 
-- **`web/src/__tests__/integration/api-client.test.ts` must be updated by story 1's developer, not
-  duplicated.** Six of its tests assert behaviour this project deliberately removes, and four will
-  not compile once `lastChangedUser` / `requiresAuth` leave `APIRequestConfig`:
-  the `post()`-with-`lastChangedUser` test, the `LastChangedUser`-header test, the 404 and 500
-  status-code-message tests, and the whole `describe('requiresAuth flag')` block (which asserts
-  `getAuthHeader()` reading browser-exposed `NEXT_PUBLIC_API_TOKEN`).
 - **`api-generated.ts` marks every field optional**, faithfully reflecting a spec with no `required:`
   arrays. `AnimalWrite` therefore cannot type-enforce the five-field writable surface — the Zod
   schemas are the only enforcement. Relevant to story 6.
-- **The `LAST_CHANGED_USER` default (`Animal Manager`) is not pinned by any automated test** — the
-  story-1 tests stub an explicit fake value. It is covered by manual verification via story 2.
 - **The spec declares no `required:` fields and the backend validates nothing.** Any field-level
   guarantee in this app is the frontend's own.
+- **`API_KEY` is not set in `web/.env.local`.** Every screen renders its failure state until a real
+  key is pasted in; no automated test can catch this, since all of them stub the key.
+- **The proxy itself is covered only by `web/src/__tests__/integration/api-route-handlers.test.ts`.**
+  The story test files mock `@/lib/api/client` and the Playwright specs intercept `/api/*`, so neither
+  layer exercises a route handler. Extend that file rather than assuming a story test covers it.

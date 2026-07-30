@@ -22,7 +22,7 @@ import type { DefaultResponse } from '@/types/api';
  * affected record on update/delete.
  */
 export function createWriteSuccess(
-  overrides: Partial<DefaultResponse> = {}
+  overrides: Partial<DefaultResponse> = {},
 ): DefaultResponse {
   return {
     Id: 42,
@@ -45,7 +45,7 @@ export function createWriteSuccess(
  * `unverifiedAssumptions`.
  */
 export function createDuplicateWarning(
-  overrides: Partial<DefaultResponse> = {}
+  overrides: Partial<DefaultResponse> = {},
 ): DefaultResponse {
   return {
     Id: 0,
@@ -61,13 +61,13 @@ export function createDuplicateWarning(
  * input, and offer a retry.
  */
 export function createWriteError(
-  overrides: Partial<DefaultResponse> = {}
+  overrides: Partial<DefaultResponse> = {},
 ): DefaultResponse {
   return {
     Id: 0,
     MessageType: 'Error',
     Messages: [
-      "The INSERT statement conflicted with the FOREIGN KEY constraint \"FK_Animal_Habitat\".",
+      'The INSERT statement conflicted with the FOREIGN KEY constraint "FK_Animal_Habitat".',
     ],
     ...overrides,
   };
