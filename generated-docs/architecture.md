@@ -230,6 +230,74 @@ Established by story 1's spec; the other eight follow them.
 
 ---
 
+## Decision 4 — The theme contract
+
+**Introduced by:** `theme-switching` story 1. Settled by the orchestrator before the remaining specs
+were generated, because story 1's spec pinned a storage key and story 2's did not — this is the binding
+version, and every story, spec and component in the epic must use it.
+
+| | |
+|---|---|
+| **Storage key** | `localStorage['theme']` — production code must export a `THEME_STORAGE_KEY` constant; nothing may hardcode the string |
+| **Stored values** | `'light'` or `'dark'` only |
+| **"Follow the OS"** | represented by **absence of the key**. Choosing *System* **clears** it. There is no stored `'system'` string |
+| **Applied class** | `dark` on `<html>`. Light is the **absence** of that class — there is no `light` class |
+| **OS source** | `window.matchMedia('(prefers-color-scheme: dark)')`, for both the pre-paint read and the live listener |
+| **Storage may throw** | private browsing / blocked storage. Fall back to `prefers-color-scheme`; a throw inside the pre-paint script takes the class with it and breaks the first paint |
+
+**The pre-paint script must run before `<body>` is parsed** — an inline `<script>` in `<head>`, or at the
+very top of `<body>` ahead of the shell. `next/script` with `afterInteractive`, a client-component
+effect, or anything hydration-timed fails story 1's AC-2, which asserts the resolved class is already
+correct at parser-time checkpoints where `document.readyState === 'loading'`.
+
+### `suppressHydrationWarning` is required but **not assertable**
+
+React treats it as a reserved prop and **never writes it to the DOM** (verified in
+`react-dom-client.development.js` — `setProp` hits a bare `break`); it is stripped in `renderToString`
+too. So story 1's developer must add it to `<html>`, but no test at any layer can hold them to it. It is
+a **code-review** item, not a test target. Do not write a test that appears to check it — such a test
+can never fail.
+
+### Testing the theme
+
+- **Never assert colours, hex values or computed styles** (`.claude/policies/styling-centralisation.md`).
+  Assert the *mechanism*: presence/absence of the `dark` class, and whether it changed.
+- Playwright emulates the OS setting with `colorScheme` / `page.emulateMedia({ colorScheme })` — that is
+  how OS-following and the light-theme scans are exercised. No manual OS switching.
+- jsdom implements **no** `matchMedia`. Any Vitest file that renders the shell must shim it in
+  `beforeAll` (reporting `matches: false`, never firing a change) or the whole shell throws on render.
+  Radix's `dropdown-menu` additionally needs the four pointer/scroll shims epic 1 already uses for
+  `select` and `alert-dialog`.
+- **The light-theme axe scan belongs to story 5**, not story 1 — light is still unfixed at story 1, so a
+  both-themes scan there would be red until story 5 lands. Epic 1's dark-only scan in
+  `epic-zoo-animal-manager-story-2-app-shell-and-roster.spec.ts` stays where it is.
+
+### ⚠ Epic 1's axe baseline will start measuring the LIGHT roster
+
+Playwright's default `colorScheme` is **`'light'`**, and epic 1's story-2 axe test emulates none — it
+passed only because `layout.tsx` hardcoded the dark class. Once story 1 makes the theme OS-driven, that
+same test begins scanning the app in **light**.
+
+**This is a feature, not a break.** It becomes an early-warning signal for light-theme contrast, and it
+is precisely what should fail if a light surface carries orange text. So:
+
+- **Do not** emulate dark into epic 1's spec to keep it quiet, and do not loosen its tags. That would
+  hide the exact defect this epic exists to prevent.
+- **Do** expect it to be red between stories 1 and 4/5, and fix it by fixing the colours — which is
+  stories 4 and 5's whole job.
+- The per-story light gate only runs lint + test-quality, so this won't surface until the epic-end
+  Playwright run, by which point stories 4 and 5 will have landed.
+
+### Nav shape the theme control must respect
+
+The nav landmark holds **exactly two links** (`Animals`, `Habitats`) — pinned by epic 1 and re-pinned by
+this epic's baseline. So the theme control must be a **button** (a dropdown trigger), never an anchor,
+and there must be exactly **one** button in the nav — a three-inline-button toggle group fails. The
+active option must declare itself through **semantics** (`aria-checked` on `menuitemradio` is the
+expected route), never by highlight or a bare tick with no ARIA state.
+
+---
+
 ## Cross-epic debt
 
 - **`web/src/components/ui/form.tsx` emits a dangling `aria-describedby`.** `FormControl`

@@ -27,6 +27,11 @@ runs ahead of hydration**: it reads the stored theme preference, falls back to `
 when absent or unreadable, and sets the `.dark` class **before first paint**. Add
 `suppressHydrationWarning` to `<html>` — the server cannot know the browser's stored choice.
 
+> **`suppressHydrationWarning` is required but not assertable.** React treats it as a reserved prop and
+> never writes it to the DOM (verified in React's `setProp`); `renderToString` strips it too. So it must
+> be added, but no test at any layer can hold you to it — it is a **code-review** item. Do not write a
+> test that appears to check it; such a test can never fail. See `architecture.md` § Decision 4.
+
 Add the shared theme state plus a `prefers-color-scheme` change listener so a system-following app
 tracks OS changes with no reload.
 
