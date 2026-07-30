@@ -1,3 +1,4 @@
+// security-ignore-file: rbac This project has no authentication surface at all — no login, no session, no user store and no roles (decided at INTAKE, recorded in generated-docs/project.md §Roles & Permissions and §Authentication). There is no auth helper to call and no identity to authorize, so an authorization guard here could only be theatre. This route is read-only in any case — `GET /v1/habitats` is the only habitat operation the backend has. The access model is a single shared API key held server-side; closing that needs a backend change to the Linx solution plus a sign-in surface, and is out of scope for this epic. Reviewed and accepted by the project owner at the epic-end quality gate on 2026-07-30.
 /**
  * `/api/habitats` — the app's own habitat endpoint.
  *

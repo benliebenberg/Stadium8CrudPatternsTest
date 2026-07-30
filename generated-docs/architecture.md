@@ -117,6 +117,11 @@ So on the browser side:
 - the caller branches on `MessageType` (`Success` / `Warning` / `Error`)
 - a transport-level failure (Linx unreachable, handler crashed) is the only case that rejects
 
+A body the route handler itself refuses (unreadable JSON, or invalid per `animalWriteSchema`) answers
+the same way — HTTP 200 + an **`Error`** envelope, never `400` and never `Warning`. `400` would make
+the client throw; `Warning` is the duplicate-name rejection the form shows against its **Name** entry
+(R20), which a malformed request is not.
+
 **Test fixtures must therefore resolve, not reject, and be served with status 200** — including the
 duplicate-name (`createDuplicateWarning()`) and technical-failure (`createWriteError()`) cases.
 `mockAnimalUpdate(page, createDuplicateWarning())` with the default 200 is correct; passing `500`
@@ -154,7 +159,7 @@ single-record read uses it rather than re-deciding.
 |---|---|---|
 | Toast notifications | `web/src/contexts/ToastContext.tsx`, `web/src/components/toast/` | `useToast()` / `showToast({ variant, title, message })`. Use for every write confirmation and failure. Do not add a second notification system. |
 | `DefaultResponse` type | `web/src/types/api.ts` | **Canonical.** Not re-emitted in `api-generated.ts`. |
-| Validation helpers | `web/src/lib/validation/schemas.ts` | `validateRequest()` / `validateRequestAsync()` / `formFieldSchemas`, plus this project's own `animalFormSchema` / `AnimalFormValues` / `EMPTY_ANIMAL_FORM` / `animalWriteFromForm()` — the five-field write surface, its rules, and the string→number mapping to `Required<AnimalWrite>` — and `animalFormFromRecord(animal)`, the mirror mapping that turns a stored `AnimalRead` into the five string entries an edit form starts from (a missing field becomes an empty entry, refused on save rather than written back). The template's email/password/userId schemas are unused by this project. |
+| Validation helpers | `web/src/lib/validation/schemas.ts` | `validateRequest()` / `validateRequestAsync()` / `formFieldSchemas`, plus this project's own `animalFormSchema` / `AnimalFormValues` / `EMPTY_ANIMAL_FORM` / `animalWriteFromForm()` — the five-field write surface, its rules, and the string→number mapping to `Required<AnimalWrite>` — and `animalWriteSchema` / `AnimalWriteBody`, the **wire** shape the server tier validates (`Age`/`HabitatId` as integers, `Age` ≥ 0, `HabitatId` positive, unknown keys stripped): use that one for anything validating a request body, and `animalFormSchema` (five strings) for anything validating what a person typed — and `animalFormFromRecord(animal)`, the mirror mapping that turns a stored `AnimalRead` into the five string entries an edit form starts from (a missing field becomes an empty entry, refused on save rather than written back). The template's email/password/userId schemas are unused by this project. |
 | Shadcn primitives | `web/src/components/ui/` | Present: `button`, `card`, `input`, `label`, `table`, `skeleton`, `alert`, `select`, `form`, `alert-dialog`. Add others via the CLI (Critical Rule 1) — never hand-roll; `--yes` does NOT cover the "file already exists, overwrite?" prompt a dependency triggers, so pipe `yes n |` and re-format the output with `prettier --write` (the CLI's output is not Prettier-formatted and `format:check` gates it). Note `CardTitle` and `AlertDialogTitle` ship `font-semibold`; the brand uses weights 400/500 only, so override with `font-medium` if you use them. A Vitest file that opens `select` or an `alert-dialog` needs jsdom shims for `hasPointerCapture`/`setPointerCapture`/`releasePointerCapture`/`scrollIntoView`/`ResizeObserver` (Radix uses all five); `Label asChild` renders label typography on a `<span>` when the thing being named is a button rather than a labelable control. **`button`'s `destructive` variant diverges from the CLI default** — `text-destructive-foreground` instead of a hard-coded `text-white`, and no `dark:bg-destructive/60` (this app is permanently dark, so dimming the fill would mean the destructive token is never used, and a 60% fill drops the token foreground to ~3:1). Re-apply both if the CLI ever regenerates the file. |
 
 ### Built in this project — reuse, don't rebuild
@@ -164,7 +169,7 @@ single-record read uses it rather than re-deciding.
 | Server tier → Linx | `web/src/lib/api/server/linx-client.ts` | `animalGetList` / `animalGetById` / `habitatGetList` / `animalCreate` / `animalUpdate` / `animalDelete`, named for the spec's `operationId`s. Injects `X-API-Key` + `LastChangedUser`, reads env per request, never throws — returns `LinxReadResult<T>` / `LinxWriteResult`. Server-only: nothing the browser runs may import it. |
 | Write-result interpretation | `web/src/lib/api/write-result.ts` | `interpretWriteResponse(body, status)` → `LinxWriteResult` (`success` / `rejected` / `failed`) from `MessageType` alone; `writeResultToEnvelope()` for route handlers; `parseWriteEnvelope(body)` to recognise a `DefaultResponse` (also how a read detects "not found"); `describeUnansweredWrite(error)` → the one sentence for a write that got no answer at all (the single case a browser-side write rejects), used by every write surface so that event has one wording. Environment-neutral — the one interpretation both sides of the proxy use. |
 | Backend failure wording | `web/src/lib/api/failure-messages.ts` | `BACKEND_UNREACHABLE_MESSAGE`, `API_KEY_REJECTED_MESSAGE`, `API_KEY_MISSING_MESSAGE`, `unusableResponseMessages(status)`. Never names or echoes the credential. |
-| Route-handler plumbing | `web/src/lib/api/server/route-helpers.ts` | `respondToRead` / `respondToWrite` (Decision 3), `readAnimalWriteBody` (five writable fields only), `parseAnimalId`, and the unknown-id / unreadable-body responses. |
+| Route-handler plumbing | `web/src/lib/api/server/route-helpers.ts` | `respondToRead` / `respondToWrite` (Decision 3), `validateAnimalWriteBody` (parses **and** validates a write body against `animalWriteSchema` → `{ valid, body }` \| `{ valid, messages }`; five writable fields only, extras stripped), `respondToRefusedWriteBody`, `parseAnimalId`, and the unknown-id response. Every write handler validates through this one function — server-side validation is the last check that exists, since the backend performs none (R19). |
 | App's own API surface | `web/src/app/api/animals/route.ts`, `.../animals/[id]/route.ts`, `.../habitats/route.ts` | `GET`/`POST` on the collection, `GET`/`PUT`/`DELETE` on one animal, `GET` habitats. All six Linx operations are proxied — no further route handler is needed by any later story. |
 | Browser-side client | `web/src/lib/api/client.ts` | `get` / `post` / `put` / `del` against same-origin `/api/*` only; failures become an `APIError` whose message comes from the response envelope, carrying `messageType`. No credential and no change-name parameter exists. |
 | Linx base-URL default | `web/src/lib/utils/constants.ts` | `LINX_API_BASE_URL_DEFAULT` — server-consumed only. (Replaces the template's `API_BASE_URL`.) |
@@ -234,7 +239,9 @@ _Open items that later work should close._
   is `animalFormSchema` at runtime plus `animalWriteFromForm()`'s `Required<AnimalWrite>` return type
   at compile time. Anything else building a write body should return `Required<AnimalWrite>` too.
 - **The spec declares no `required:` fields and the backend validates nothing.** Any field-level
-  guarantee in this app is the frontend's own.
+  guarantee in this app is the frontend's own, enforced in two places: `animalFormSchema` for what a
+  person types, and `animalWriteSchema` in the route handler for every request body regardless of
+  what sent it.
 - **`API_KEY` is not set in `web/.env.local`.** Every screen renders its failure state until a real
   key is pasted in; no automated test can catch this, since all of them stub the key.
 - **The template's `Toast`/`ToastContainer` are styled with raw Tailwind palette classes**

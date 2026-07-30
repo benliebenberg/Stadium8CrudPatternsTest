@@ -121,6 +121,49 @@ export function animalWriteFromForm(
 }
 
 /**
+ * The animal **wire** shape — what a request body to `POST`/`PUT /api/animals` must be (R17/R19).
+ *
+ * Deliberately NOT the same schema as {@link animalFormSchema}, and the difference is the whole
+ * point of it existing:
+ *
+ * - {@link animalFormSchema} validates what a **person typed into a form**: five strings, with
+ *   `Age` tested as text so `"2.5"` and `"-1"` can be told apart from `5` and shown back exactly
+ *   as entered.
+ * - This one validates what **arrives over HTTP at the server tier**: `Age` and `HabitatId` are
+ *   already `number`s by then ({@link animalWriteFromForm} converted them), and the sender is not
+ *   necessarily the form at all — it can be curl, a stale tab, or a future bug in client code.
+ *
+ * That last point is why this is not belt-and-braces duplication. The backend declares no
+ * `required:` fields and validates nothing: it inserts what it is sent straight into the database
+ * (R19). So for any request that does not come through the form, the route handler is the **only**
+ * validation that exists anywhere in the system, and a bad row it lets through is permanent.
+ *
+ * `HabitatId` must be a positive whole number for the reason in BR5: the backend `INNER JOIN`s
+ * Habitat on read, so an animal stored against `0` or a fractional id is created successfully and
+ * then **permanently invisible in every list**.
+ *
+ * Unknown keys are stripped rather than rejected (Zod's default for `z.object`), which is what
+ * keeps the writable surface to exactly five fields — an `Id`, a `HabitatName` or, above all, a
+ * `LastChangedUser` a caller tried to smuggle in never survives this parse (R17/BR3).
+ *
+ * Consumed by `validateAnimalWriteBody` in `web/src/lib/api/server/route-helpers.ts`, which both
+ * write route handlers go through.
+ */
+export const animalWriteSchema = z.object({
+  Name: z.string().trim().min(1, 'must be text with at least one character'),
+  Species: z.string().trim().min(1, 'must be text with at least one character'),
+  Age: z.number().int('must be a whole number').min(0, 'must be 0 or more'),
+  HabitatId: z
+    .number()
+    .int('must be a whole number')
+    .positive('must be the id of a real habitat'),
+  Diet: z.string().trim().min(1, 'must be text with at least one character'),
+});
+
+/** A request body that has passed {@link animalWriteSchema}: five fields, none of them absent. */
+export type AnimalWriteBody = z.infer<typeof animalWriteSchema>;
+
+/**
  * Email validation schema
  * Validates email format and normalizes to lowercase
  */

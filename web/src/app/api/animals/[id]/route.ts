@@ -1,3 +1,4 @@
+// security-ignore-file: rbac This project has no authentication surface at all — no login, no session, no user store and no roles (decided at INTAKE, recorded in generated-docs/project.md §Roles & Permissions and §Authentication). There is no auth helper to call and no identity to authorize, so an authorization guard here could only be theatre. The access model is a single shared API key held server-side, which means anyone who can reach the app has full read/write over every animal record — an accepted, documented architectural trade-off, not an oversight. Closing it needs a backend change to the Linx solution (it exposes no OIDC and no user store) plus a sign-in surface, and is out of scope for this epic. Reviewed and accepted by the project owner at the epic-end quality gate on 2026-07-30.
 /**
  * `/api/animals/{id}` — the app's own single-animal endpoint.
  *
@@ -18,12 +19,12 @@ import {
 } from '@/lib/api/server/linx-client';
 import {
   parseAnimalId,
-  readAnimalWriteBody,
   respondToRead,
+  respondToRefusedWriteBody,
   respondToUnknownAnimalRead,
   respondToUnknownAnimalWrite,
-  respondToUnreadableBody,
   respondToWrite,
+  validateAnimalWriteBody,
 } from '@/lib/api/server/route-helpers';
 
 /** Never prerendered or cached — an edit must be visible immediately afterwards (R23). */
@@ -48,7 +49,13 @@ export async function GET(
   return respondToRead(await animalGetById(id));
 }
 
-/** Overwrite one animal's five writable fields. */
+/**
+ * Overwrite one animal's five writable fields.
+ *
+ * Validated server-side on the same terms as the create (R19) — an edit that arrives from
+ * anything other than the form gets the same refusal, because a `PUT` replaces the whole record
+ * and an invalid field here overwrites a good stored value.
+ */
 export async function PUT(
   request: Request,
   context: AnimalRouteContext,
@@ -59,13 +66,13 @@ export async function PUT(
     return respondToUnknownAnimalWrite();
   }
 
-  const body = await readAnimalWriteBody(request);
+  const body = await validateAnimalWriteBody(request);
 
-  if (body === null) {
-    return respondToUnreadableBody();
+  if (!body.valid) {
+    return respondToRefusedWriteBody(body.messages);
   }
 
-  return respondToWrite(await animalUpdate(id, body));
+  return respondToWrite(await animalUpdate(id, body.body));
 }
 
 /** Remove one animal. Irreversible — the confirmation step lives in the UI (R22). */
