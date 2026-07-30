@@ -55,7 +55,22 @@ export default function RootLayout({
         {/* Inline and in `<head>` on purpose: the parser must run it before `<body>` exists.
             `next/script`, a client component or an effect all run after hydration, which is
             after the first paint — a visible flash of the wrong theme. */}
-        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+        {/* security-ignore: xss THEME_INIT_SCRIPT is a compile-time constant defined in
+            web/src/lib/theme/theme-init-script.ts, built by interpolating our own token
+            constants. No user input, request data, or external content reaches it — there is no
+            injection surface to sanitize. Inlining it in <head> is not a style choice: the
+            parser must execute it before <body> exists, or the page paints in the wrong theme
+            and visibly corrects itself (story 1 AC-2, which asserts the resolved class at
+            parser-time checkpoints while readyState === 'loading'). The alternatives are worse —
+            React escapes text children of <script>, which corrupts the source, and an external
+            <script src> adds a blocking request before first paint. Sanitizing a JavaScript
+            string with an HTML sanitizer would corrupt it while protecting against nothing.
+            Reviewed and accepted by the project owner at the epic-end quality gate on
+            2026-07-30. */}
+        {
+          // security-ignore: xss THEME_INIT_SCRIPT is a compile-time constant with no user, request or external input — see the note above for why inlining is required and why sanitizing would corrupt it. Accepted by the project owner, 2026-07-30.
+          <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+        }
       </head>
       <body className="antialiased">
         {/* The shell REPLACES the template's own `<main>` wrapper rather than nesting
