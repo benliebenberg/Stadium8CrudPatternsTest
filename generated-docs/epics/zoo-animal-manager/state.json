@@ -15,9 +15,16 @@
       "Open the browser's network tab on the animal list and confirm the requests go to your own app (a path starting /api/), NOT to localhost:10002. The starter template prefixed every request with the backend's address, and neither the automated tests nor the browser mocks can catch that mistake — but the real app would leak the backend address and fail with a CORS error. This is the one thing most worth eyeballing in the network tab.",
       "BEFORE manual testing: put your backend API key into API_KEY in web/.env.local. That file was rewritten during the build and the key slot is empty (the file is git-ignored, so nothing was ever committed). Until you fill it in, every screen will correctly show its 'could not reach the backend' message rather than data — which is the app working properly, but looks identical to a broken app."
     ],
-    "manualTestResults": []
+    "manualTestResults": [
+      {
+        "story": "all",
+        "test": "Full manual checklist (45 checks + 7 backend assumptions)",
+        "passed": true,
+        "note": "Confirmed by the project owner on 2026-07-30."
+      }
+    ]
   },
-  "phase": "MANUAL-TEST",
+  "phase": "COMPLETE-ON-BRANCH",
   "stories": {
     "1": {
       "status": "complete",
@@ -84,5 +91,5 @@
     }
   },
   "halt": null,
-  "lastUpdated": "2026-07-30T15:10:00.000Z"
+  "lastUpdated": "2026-07-30T15:40:00.000Z"
 }
