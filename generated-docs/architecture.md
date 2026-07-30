@@ -327,6 +327,42 @@ Corollary for anything that composites: `--card` (`#ffffff`) is **lighter** than
 (`#fff9ec`), so light does have a raised direction available — but at 1.05:1 it is not a usable
 separation cue on its own. Only the border is.
 
+### The both-themes axe scan (story 5) — proven to bite, and what it cannot see
+
+`epic-theme-switching-story-5-light-states-and-a11y.spec.ts` runs the WCAG 2.1 AA scan as
+`colorScheme` **`light` × `dark`** over five surfaces (roster, roster failed-to-load, an animal's
+detail, habitats, the add form), each on its own page, asserting the resolved theme *before* each
+scan. Epic 1's baseline is extended, never replaced.
+
+**It bites — verified, not assumed.** Adding `text-brand-primary` to `FailureState`'s `AlertTitle`
+and rebuilding turns the **light** half red (`color-contrast`, serious, on the alert title) while the
+**dark** half still passes: orange is 2.7:1 on the light card and ~5.8:1 on the dark one. That
+asymmetry is the entire reason the scan is parameterised. Re-run that one-line mutation if the scan's
+value is ever doubted — a green both-themes run is otherwise indistinguishable from a vacuous one.
+
+**What it does not cover.** Only those five surfaces in their default state. The states story 5 is
+*about* — both empty states, "no matches", not-found (detail and edit), every loading placeholder,
+and `AnimalForm`'s two refusals — are **unscanned**, because reaching them needs interception the
+scan does not install. A contrast regression there is caught by eye at the manual-test gate, not by
+any gate.
+
+### Light's non-happy states needed no per-state fix (story 5)
+
+Measured in a real browser against a production build, in both themes, across every state above:
+each one is expressed purely in swapped semantic tokens, so nothing was tuned for dark and nothing
+inverted badly on cream. In light, every text pair is **≥5.05:1** — destructive on the white card
+5.05, muted body copy 5.79, `--primary` links 5.40, ink 18.98.
+
+Two specifics worth not re-deriving:
+
+- **The skeleton does not vanish on cream.** `Skeleton` is `bg-accent`, which is ~10% of the
+  foreground over the background in *both* themes — 1.24:1 on the light page vs 1.35:1 on the dark
+  one, and 1.30 vs 1.20 on a card. So it goes *darker* on cream rather than lighter, which is the
+  failure mode the story was written to catch. Light is the better of the two on a card.
+- **Both `AnimalForm` refusals are `--destructive` in both themes**, never the brand orange
+  (AC-4/BR5): the duplicate-name `Warning` as the Name entry's own `FormMessage` + `aria-invalid`
+  border (5.05:1 in light, 5.87:1 in dark), the technical `Error` as the form-level `Alert`.
+
 ### Nav shape the theme control must respect
 
 The nav landmark holds **exactly two links** (`Animals`, `Habitats`) — pinned by epic 1 and re-pinned by
@@ -348,6 +384,16 @@ expected route), never by highlight or a bare tick with no ARIA state.
   any fix diverges from the generated primitive (the same class of divergence as `button.tsx`'s
   destructive variant). Worth revisiting if a screen ever adds `FormDescription`, or on the next
   Shadcn upgrade. Found by the epic-end code review, severity low.
+
+- **An `outline` button's boundary is below WCAG 2.1 SC 1.4.11's 3:1, in both themes.**
+  `button.tsx`'s `outline` variant fills with `bg-background` — *identical* to the page — so its only
+  boundary is `--border`: **1.38:1** in light and **1.24:1** in dark, measured on `FailureState`'s
+  Retry control (the most consequential instance; `Cancel`, `Edit animal` and the dialog's Cancel are
+  the same variant). SC 1.4.11 asks for 3:1 on the visual information that identifies a control.
+  **Deliberately not fixed in story 5:** it is theme-symmetric and pre-dates this epic, so it is not
+  a light-theme defect, and the boundary is a *token* value — lifting it for one control class would
+  diverge from `--border` app-wide. axe cannot detect boundary contrast, so no gate catches it
+  either. This needs a design decision, not a patch.
 
 _Open items that later work should close._
 
