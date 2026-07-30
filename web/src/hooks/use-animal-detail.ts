@@ -5,7 +5,8 @@
  *
  * The sibling of `use-animal-roster.ts`, with the same client-side shape (architecture.md
  * § Decision 1: the browser never reaches Linx directly, and a server-component read would be
- * invisible to both test layers) — plus one state the roster does not need: **not found**.
+ * invisible to both test layers) and the same attempt-counter/unmount guards, which are
+ * `use-tracked-read`'s — plus one state the roster does not need: **not found**.
  *
  * Three things this hook owns, so no screen has to re-derive them:
  *
@@ -21,9 +22,7 @@
  *    is not something trying again can fix, and offering a Retry there would be a lie.
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react';
-
-import { get } from '@/lib/api/client';
+import { useTrackedRead } from '@/hooks/use-tracked-read';
 import { animalEndpoint } from '@/lib/api/endpoints';
 import {
   describeReadFailure,
@@ -50,6 +49,9 @@ export interface AnimalDetailResult {
   /** Re-attempt the load — the Retry affordance R6/NFR-base-5 require. */
   readonly reload: () => void;
 }
+
+/** Module-level, because `use-tracked-read` treats a new `loading` value as a new read. */
+const LOADING: AnimalDetailState = { status: 'loading' };
 
 /**
  * Interpret a read that **resolved**: HTTP 2xx, with a body the client parsed.
@@ -96,71 +98,14 @@ function readRejection(error: unknown): AnimalDetailState {
 /**
  * @param id The animal id from the route. Passed through as given: the route handler is what
  *   validates that it could be an animal id at all, and answers a junk segment with a proper
- *   not-found rather than this hook second-guessing the address bar.
+ *   not-found rather than this hook second-guessing the address bar. A change of id is a
+ *   different record, so it re-issues the read.
  */
 export function useAnimalDetail(id: string): AnimalDetailResult {
-  const [state, setState] = useState<AnimalDetailState>({ status: 'loading' });
-
-  /**
-   * The attempt currently allowed to publish a result — same guard as the roster hook. A slow
-   * first response must not overwrite the answer to a retry the user has already triggered,
-   * and an unmounted screen must not be updated at all.
-   */
-  const currentAttempt = useRef(0);
-  const mounted = useRef(true);
-
-  /**
-   * Issue one request and publish its outcome.
-   *
-   * Deliberately does NOT set the loading state itself: the hook starts in `loading`, so the
-   * placeholder is on screen from the first render and the effect below can start the request
-   * without writing state synchronously (which cascades renders — `react-hooks/set-state-in-effect`,
-   * the lint failure story 2 hit). Resetting to `loading` belongs to {@link reload}, where it
-   * happens inside a user event instead.
-   */
-  const load = useCallback(() => {
-    const attempt = currentAttempt.current + 1;
-    currentAttempt.current = attempt;
-
-    const isStillWanted = () =>
-      mounted.current && currentAttempt.current === attempt;
-
-    void get<unknown>(animalEndpoint(id)).then(
-      (body) => {
-        if (!isStillWanted()) {
-          return;
-        }
-
-        setState(readAnimalBody(body));
-      },
-      (error: unknown) => {
-        if (!isStillWanted()) {
-          return;
-        }
-
-        setState(readRejection(error));
-      },
-    );
-  }, [id]);
-
-  /**
-   * Re-attempt the load, back to the loading placeholder first so the retry is visibly doing
-   * something. Called from a click handler, never from an effect. The attempt counter in
-   * {@link load} discards whatever the previous, still-open request answers.
-   */
-  const reload = useCallback(() => {
-    setState({ status: 'loading' });
-    load();
-  }, [load]);
-
-  useEffect(() => {
-    mounted.current = true;
-    load();
-
-    return () => {
-      mounted.current = false;
-    };
-  }, [load]);
-
-  return { state, reload };
+  return useTrackedRead({
+    endpoint: animalEndpoint(id),
+    loading: LOADING,
+    fromBody: readAnimalBody,
+    fromRejection: readRejection,
+  });
 }

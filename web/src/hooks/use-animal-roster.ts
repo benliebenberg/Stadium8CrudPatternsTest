@@ -17,11 +17,12 @@
  * - **One roster load per attempt.** The backend accepts no search/filter/sort/paging
  *   parameters and always returns every animal sorted by `Name` (BR6), so filtering happens
  *   over `animals` in memory and must not re-issue the request.
+ *
+ * The attempt counter and unmount guard behind that last point are `use-tracked-read`'s, shared
+ * with the other two read hooks so there is one implementation of the race to get right.
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react';
-
-import { get } from '@/lib/api/client';
+import { useTrackedRead } from '@/hooks/use-tracked-read';
 import { ANIMALS_ENDPOINT } from '@/lib/api/endpoints';
 import { describeReadFailure } from '@/lib/api/read-failure';
 import type { AnimalRead, AnimalReadList } from '@/types/api-generated';
@@ -37,6 +38,9 @@ export interface AnimalRosterResult {
   /** Re-attempt the load — the Retry affordance R6/NFR-base-5 require. */
   readonly reload: () => void;
 }
+
+/** Module-level, because `use-tracked-read` treats a new `loading` value as a new read. */
+const LOADING: RosterState = { status: 'loading' };
 
 /**
  * The animals out of a response body, or `null` when the body is not a roster at all.
@@ -54,76 +58,25 @@ function readRoster(body: unknown): readonly AnimalRead[] | null {
   return Array.isArray(animals) ? animals : null;
 }
 
+/** A roster read that resolved: a roster, or a failure if the body was not one. */
+function rosterFromBody(body: unknown): RosterState {
+  const animals = readRoster(body);
+
+  return animals === null
+    ? { status: 'failed', detail: describeReadFailure(undefined) }
+    : { status: 'loaded', animals };
+}
+
+/** A roster read that rejected. A collection read has no not-found state to reach. */
+function rosterFromRejection(error: unknown): RosterState {
+  return { status: 'failed', detail: describeReadFailure(error) };
+}
+
 export function useAnimalRoster(): AnimalRosterResult {
-  const [state, setState] = useState<RosterState>({ status: 'loading' });
-
-  /**
-   * The attempt currently allowed to publish a result. A slow first response must not
-   * overwrite the answer to a retry the user has already triggered, and an unmounted screen
-   * must not be updated at all.
-   */
-  const currentAttempt = useRef(0);
-  const mounted = useRef(true);
-
-  /**
-   * Issue one roster request and publish its outcome.
-   *
-   * Deliberately does NOT set the loading state itself: the hook's initial state is already
-   * `loading`, so the placeholder is on screen from the first render, and the effect below can
-   * start the request without writing state synchronously (which cascades renders — see
-   * `react-hooks/set-state-in-effect`). Resetting to `loading` belongs to {@link reload},
-   * where it happens inside a user event instead.
-   */
-  const load = useCallback(() => {
-    const attempt = currentAttempt.current + 1;
-    currentAttempt.current = attempt;
-
-    const isStillWanted = () =>
-      mounted.current && currentAttempt.current === attempt;
-
-    void get<unknown>(ANIMALS_ENDPOINT).then(
-      (body) => {
-        if (!isStillWanted()) {
-          return;
-        }
-
-        const animals = readRoster(body);
-
-        setState(
-          animals === null
-            ? { status: 'failed', detail: describeReadFailure(undefined) }
-            : { status: 'loaded', animals },
-        );
-      },
-      (error: unknown) => {
-        if (!isStillWanted()) {
-          return;
-        }
-
-        setState({ status: 'failed', detail: describeReadFailure(error) });
-      },
-    );
-  }, []);
-
-  /**
-   * Re-attempt the load, back to the loading placeholder first so the retry is visibly doing
-   * something. Called from a click handler, never from an effect, so setting state here is the
-   * ordinary event-driven path. The attempt counter in {@link load} discards whatever the
-   * previous, still-open request answers.
-   */
-  const reload = useCallback(() => {
-    setState({ status: 'loading' });
-    load();
-  }, [load]);
-
-  useEffect(() => {
-    mounted.current = true;
-    load();
-
-    return () => {
-      mounted.current = false;
-    };
-  }, [load]);
-
-  return { state, reload };
+  return useTrackedRead({
+    endpoint: ANIMALS_ENDPOINT,
+    loading: LOADING,
+    fromBody: rosterFromBody,
+    fromRejection: rosterFromRejection,
+  });
 }

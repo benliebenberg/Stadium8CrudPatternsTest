@@ -51,6 +51,27 @@
  * deliberately no way to create a habitat from here, because only `GET /v1/habitats` exists
  * (R16/BR7). That is a backend capability limit, not a permission rule.
  *
+ * ## A prefilled habitat that no longer exists is cleared, and said out loud
+ *
+ * An edit can arrive holding a `HabitatId` that is not among the habitats that came back —
+ * a habitat retired from the reference list since the animal was last saved. Radix's `Select`
+ * has no option to match, so it paints the placeholder; but the form's value would still be the
+ * stale id. That divergence — the screen saying "nothing chosen" while the value about to be
+ * submitted says otherwise — is the dangerous state: the entry passes the mandatory-habitat rule
+ * (it is a non-empty string), so a save would write the unresolvable id straight back and make
+ * the animal permanently invisible in every list (BR5), with nothing on screen having warned
+ * anyone.
+ *
+ * So once the habitats have arrived, an unresolvable prefill is **cleared**, which makes the
+ * displayed value and the submitted value agree again and lets the existing mandatory-habitat
+ * rule block the save by itself. The entry then carries {@link HABITAT_UNAVAILABLE_MESSAGE}
+ * through the same `FormControl`/`FormMessage` wiring every other refusal on this form uses — no
+ * second error mechanism, and not a toast, which would be gone by the time the person looked at
+ * the picker.
+ *
+ * Deliberately **not** done: inventing a habitat, preselecting the first one, or dropping
+ * `HabitatId` from the body. Each trades a problem the user can see for one they cannot.
+ *
  * ## Outcomes come from `MessageType`, never from a status code
  *
  * The app's own route handler answers every write with HTTP 200 and the `DefaultResponse`
@@ -86,7 +107,7 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
-import { useId, useState } from 'react';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 
 import { FailureState } from '@/components/feedback/FailureState';
@@ -134,6 +155,20 @@ const HABITATS_FAILED_HINT =
   'An animal can only be saved against a habitat that already exists, so try loading them again.';
 const HABITATS_LOADING_LABEL =
   'Loading the habitats this animal can be assigned to';
+
+/**
+ * What the Habitat entry says when the animal's recorded habitat is not among the habitats that
+ * exist — a habitat retired from the reference list since this animal was last saved.
+ *
+ * Stated as a fact about this animal plus the one action that resolves it. The alternative was
+ * silence, which is how the same situation becomes an animal written back against an
+ * unresolvable habitat and lost from every list (BR5).
+ */
+const HABITAT_UNAVAILABLE_MESSAGE =
+  'This animal’s recorded habitat is no longer one the zoo has on record, so choose a new habitat before saving.';
+
+/** The habitat entry, named once — it is referred to imperatively as well as declaratively. */
+const HABITAT_ENTRY = 'HabitatId' as const;
 
 /**
  * What the user reads when the save failed for technical reasons (`MessageType: 'Error'`, or no
@@ -251,6 +286,20 @@ export function AnimalForm({
   const [saving, setSaving] = useState(false);
 
   /**
+   * The same fact as {@link saving}, kept where it can be read and written in one synchronous
+   * step — and it is what actually prevents a second write.
+   *
+   * `saving` cannot close the door on its own, because it is only set once react-hook-form has
+   * finished validating: for the whole of that window the submit control is still live, so a
+   * double-click sends the form twice. On a create that is two identical animals from one
+   * gesture, on a backend with no undo (BR12) and no request timeout; on an edit it is two
+   * `PUT`s racing to overwrite the same record. React state cannot guard it — the re-render that
+   * disables the control happens after the second click has already been handled — so the guard
+   * has to be a ref, checked and set before the first `await`.
+   */
+  const inFlight = useRef(false);
+
+  /**
    * The backend's own words when the save FAILED technically, or `null` while it has not.
    *
    * A business rejection is not held here: it lives on the entry it belongs to, as that field's
@@ -263,10 +312,53 @@ export function AnimalForm({
     defaultValues: initialValues,
   });
 
-  const habitats =
-    habitatsState.status === 'loaded'
-      ? assignableHabitats(habitatsState.habitats)
-      : NO_HABITATS;
+  /**
+   * The choices the picker offers. Memoised on the habitats state, which only changes when a read
+   * answers — `assignableHabitats` builds a new array every call, and an identity that changed on
+   * every render would make the effect below fire on every render too.
+   */
+  const habitatsLoaded = habitatsState.status === 'loaded';
+  const habitats = useMemo(
+    () =>
+      habitatsState.status === 'loaded'
+        ? assignableHabitats(habitatsState.habitats)
+        : NO_HABITATS,
+    [habitatsState],
+  );
+
+  /**
+   * Whatever habitat the caller prefilled — read from the prop rather than from the form, so this
+   * is about the *record's* stored habitat and cannot be re-triggered by what the user then picks.
+   */
+  const prefilledHabitatId = initialValues.HabitatId;
+
+  /**
+   * The unresolvable prefill, handled the moment the habitats are known: clear the value so the
+   * form submits what it is showing, and put the reason on the entry itself.
+   *
+   * It has to wait for the habitats: until they arrive, "not in the list" and "the list has not
+   * loaded yet" look identical. Nothing happens on an add form (nothing is prefilled) or on the
+   * ordinary edit (the habitat resolves), so this is invisible on every path but the one it
+   * exists for.
+   */
+  useEffect(() => {
+    if (
+      !habitatsLoaded ||
+      prefilledHabitatId === '' ||
+      habitats.some((habitat) => String(habitat.Id) === prefilledHabitatId)
+    ) {
+      return;
+    }
+
+    // Order matters: `setValue` without `shouldValidate` runs no rules, so the message set next
+    // is the one the user reads — the generic "choose a habitat" only replaces it if they submit
+    // without choosing, which is the right message at that point.
+    form.setValue(HABITAT_ENTRY, '');
+    form.setError(HABITAT_ENTRY, {
+      type: 'habitat-unavailable',
+      message: HABITAT_UNAVAILABLE_MESSAGE,
+    });
+  }, [form, habitats, habitatsLoaded, prefilledHabitatId]);
 
   /**
    * Send the validated animal and act on what came back.
@@ -276,6 +368,13 @@ export function AnimalForm({
    * store whatever it was sent (R19).
    */
   const sendAnimal = async (values: AnimalFormValues): Promise<void> => {
+    // A submit that got through while the previous one was still being validated. Dropped here
+    // rather than sent: nothing about it differs from the write already on its way.
+    if (inFlight.current) {
+      return;
+    }
+
+    inFlight.current = true;
     setSaving(true);
     setFailure(null);
 
@@ -288,8 +387,8 @@ export function AnimalForm({
         // The backend's own confirmation wording, not ours (R23).
         showToast({ variant: 'success', title: result.messages[0] });
         onSaved(result.id);
-        // Deliberately leaves the control disabled: this screen is on its way out, and
-        // re-enabling it would invite a second create of the same animal.
+        // Deliberately leaves the control disabled AND the guard closed: this screen is on its
+        // way out, and re-opening either would invite a second create of the same animal.
         return;
       }
 
@@ -313,6 +412,9 @@ export function AnimalForm({
       setFailure([describeUnansweredWrite(error)]);
     }
 
+    // Refused or unanswered: the same values may be sent again exactly as they stand (R20/R24),
+    // so both the control and the guard re-open together.
+    inFlight.current = false;
     setSaving(false);
   };
 
@@ -322,7 +424,11 @@ export function AnimalForm({
         // `noValidate`: the browser's own bubbles would compete with the field-level messages
         // below, which are the ones wired to their controls for assistive technology.
         noValidate
-        onSubmit={form.handleSubmit(sendAnimal)}
+        // `handleSubmit` is composed inside the event rather than during render: `sendAnimal`
+        // reads the in-flight guard below, and a ref may only be read from an event handler.
+        onSubmit={(event) => {
+          void form.handleSubmit(sendAnimal)(event);
+        }}
         className="flex flex-col gap-6"
       >
         {/* A technical failure only. A duplicate name never reaches here — it is the Name
@@ -427,11 +533,23 @@ export function AnimalForm({
 
               <FormField
                 control={form.control}
-                name="HabitatId"
+                name={HABITAT_ENTRY}
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel id={habitatLabelId}>{HABITAT_LABEL}</FormLabel>
-                    <Select value={field.value} onValueChange={field.onChange}>
+                    <Select
+                      value={field.value}
+                      onValueChange={(chosen) => {
+                        field.onChange(chosen);
+                        // Every option in this list is a habitat that exists, so any message
+                        // against this entry — "choose a habitat", or the unavailable-habitat
+                        // one above — is answered by the choice just made. Cleared explicitly
+                        // because react-hook-form only revalidates on change once the form has
+                        // been submitted, so a message set before a first submit would otherwise
+                        // sit in red under a now-perfectly-good choice.
+                        form.clearErrors(HABITAT_ENTRY);
+                      }}
+                    >
                       <FormControl>
                         <SelectTrigger
                           aria-labelledby={habitatLabelId}

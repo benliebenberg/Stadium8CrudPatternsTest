@@ -186,6 +186,22 @@ const RAINFOREST_ID = 2;
 const SAVANNAH = habitatNamed(SAVANNAH_ID);
 const RAINFOREST = habitatNamed(RAINFOREST_ID);
 
+/**
+ * A `HabitatId` that no habitat in the shared factory has — the animal's recorded habitat has
+ * been retired from the reference list since it was last saved (the BR5 orphan
+ * `web/src/mocks/data/animal.ts` documents).
+ *
+ * Derived from the factory rather than hard-coded, so a canonical habitat set that ever grows to
+ * include this id cannot quietly turn the test below into a no-op.
+ */
+const RETIRED_HABITAT_ID =
+  Math.max(...createHabitats().map((habitat) => habitat.Id ?? 0)) + 1;
+
+/** Every habitat name the picker can legitimately be showing. */
+const HABITAT_NAMES = createHabitats().map((habitat) =>
+  required(habitat.Name, 'a Name on every canonical habitat'),
+);
+
 /** The record under edit. `AGE` is deliberately not `ANIMAL_ID`, so the AC-5 value sweep for
  * the identifier cannot be satisfied (or defeated) by the Age entry. */
 const NAME = 'Thabo';
@@ -229,6 +245,14 @@ const REQUIRED_MESSAGE =
   /required|enter|choose|select|provide|must|cannot be|can't be|empty|missing/i;
 const AGE_RULE_MESSAGE =
   /whole number|integer|decimal|fraction|negative|positive|0 or more|zero or more/i;
+
+/**
+ * What the Habitat entry has to say when the animal's recorded habitat is not among the habitats
+ * that exist: that the recorded one is gone. The wording is the implementation's, but the fact is
+ * not optional — without it, a form the user has not touched refuses to save and never says why.
+ */
+const HABITAT_RETIRED_MESSAGE =
+  /no longer|not available|unavailable|does not exist|no such|been removed|missing/i;
 
 /**
  * Entries that must not exist (AC-5): the record's identifier, the backend-joined habitat
@@ -642,5 +666,71 @@ describe('Epic zoo-animal-manager, Story 7: edit an animal', () => {
     await waitFor(() =>
       expect(presentedValue(field(HABITAT_LABEL))).toBe(RAINFOREST),
     );
+  });
+
+  // AC-1 / BR5 — the prefill that cannot be shown. A habitat retired from the reference list
+  // since this animal was last saved leaves the picker with no option to display, so it shows
+  // nothing chosen. The hazard is what the form would then SEND: if it still held the retired id
+  // behind that empty-looking picker, saving would write it straight back, and the backend's
+  // INNER JOIN would drop the animal from every list — silently, permanently, with no way back
+  // through the UI. So what is displayed and what would be submitted have to agree, and the
+  // person has to be told to choose again.
+  it('refuses to save an animal whose recorded habitat no longer exists until a new one is chosen', async () => {
+    const user = userEvent.setup();
+    renderEditPage(
+      // An orphan, built deliberately: `HabitatName: undefined` because the backend's INNER
+      // JOIN has no name to join for a habitat that is gone.
+      animalRecord({
+        HabitatId: RETIRED_HABITAT_ID,
+        HabitatName: undefined,
+      }),
+    );
+    await awaitPrefill();
+
+    // The picker is showing no habitat — it has no option for this animal's recorded one …
+    await waitFor(() => expect(field(HABITAT_LABEL)).toBeInvalid());
+    expect(HABITAT_NAMES).not.toContain(presentedValue(field(HABITAT_LABEL)));
+    // … and it says so, against the entry itself, the same way every other refusal on this form
+    // is reported: marked above, with the message as the control's accessible description.
+    expect(field(HABITAT_LABEL)).toHaveAccessibleDescription(
+      HABITAT_RETIRED_MESSAGE,
+    );
+
+    // Saving without touching anything is refused, and the rest of the prefill is untouched —
+    // the user is being asked for one thing, not made to retype the animal.
+    await user.click(saveButton());
+
+    await waitFor(() => expect(field(HABITAT_LABEL)).toBeInvalid());
+    expect(field(HABITAT_LABEL)).toHaveAccessibleDescription(REQUIRED_MESSAGE);
+    expect(presentedValue(field(NAME_LABEL))).toBe(NAME);
+    expect(router.push).not.toHaveBeenCalled();
+
+    // Choosing a habitat that does exist clears the refusal and the save goes through …
+    mockPut.mockResolvedValueOnce(
+      createWriteSuccess({ Id: ANIMAL_ID, Messages: [UPDATE_CONFIRMATION] }),
+    );
+    await chooseHabitat(user, exactly(RAINFOREST));
+    await waitFor(() =>
+      expect(presentedValue(field(HABITAT_LABEL))).toBe(RAINFOREST),
+    );
+    await user.click(saveButton());
+
+    // … and this is the ONLY write in the whole test, which is how the blocked save above is
+    // shown to have sent nothing at all rather than merely not navigated.
+    await waitFor(() =>
+      expect(writeRequests()).toEqual([`PUT /api/animals/${ANIMAL_ID}`]),
+    );
+
+    const [, body] = mockPut.mock.calls[0] as unknown[];
+
+    // The habitat written is the one the user chose. The retired id is gone from the form, not
+    // hiding in it — writing it back is exactly the BR5 outcome this test exists to prevent.
+    expect(body).toEqual({
+      Name: NAME,
+      Species: SPECIES,
+      Age: AGE,
+      HabitatId: RAINFOREST_ID,
+      Diet: DIET,
+    });
   });
 });
