@@ -27,17 +27,17 @@
       "completedAt": "2026-07-30T09:32:00.000Z"
     },
     "2": {
-      "status": "in-progress",
+      "status": "complete",
       "commit": null,
       "e2eStatus": "deferred",
       "startedAt": "2026-07-30T10:05:00.000Z",
-      "completedAt": null
+      "completedAt": "2026-07-30T10:48:00.000Z"
     },
     "3": {
-      "status": "pending",
+      "status": "in-progress",
       "commit": null,
       "e2eStatus": "deferred",
-      "startedAt": null,
+      "startedAt": "2026-07-30T10:50:00.000Z",
       "completedAt": null
     },
     "4": {

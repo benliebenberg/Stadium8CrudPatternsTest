@@ -11,25 +11,52 @@
  * (Critical Rule 6, `web/src/components/layout/AppShell.tsx`).
  */
 
+import { useMemo, useState } from 'react';
+
 import { AnimalRosterTable } from '@/components/animals/AnimalRosterTable';
+import { RosterFilters } from '@/components/animals/RosterFilters';
 import { EmptyState } from '@/components/feedback/EmptyState';
 import { FailureState } from '@/components/feedback/FailureState';
 import { LoadingState } from '@/components/feedback/LoadingState';
 import { useAnimalRoster } from '@/hooks/use-animal-roster';
+import { filterRoster, habitatsInRoster } from '@/lib/animals/roster-filters';
+import type { AnimalRead } from '@/types/api-generated';
 
 /**
- * User-visible copy. The empty and failure wording must stay clearly different from each
- * other — an empty zoo is a result, a failed load is not (R10) — and different from the
- * "nothing matched your search" wording the roster's filters use, which is a third, narrower
- * fact.
+ * User-visible copy. Three states that are easy to conflate and must never read alike:
+ * a failed load is not a result (R10), an empty zoo is a result, and a roster narrowed to
+ * nothing by a search term is a third, narrower fact — the person's own term is the reason,
+ * and the wording has to say so or they will read it as "the zoo is empty" (R11).
  */
 const ROSTER_FAILED_TITLE = 'The animal roster could not be loaded';
 const NO_ANIMALS_TITLE = 'No animals yet';
 const NO_ANIMALS_DETAIL =
   'As soon as an animal is recorded in the backend, it appears here.';
+const NO_MATCHES_TITLE = 'No animals match your search';
+const NO_MATCHES_DETAIL =
+  'Try a shorter term, or choose a different habitat, to widen the results.';
+
+/** A stable identity for "no animals", so the memos below do not recompute every render. */
+const NO_ANIMALS: readonly AnimalRead[] = [];
 
 export default function HomePage() {
   const { state, reload } = useAnimalRoster();
+
+  /**
+   * The two narrowing controls, held here as plain state and applied in memory. Nothing
+   * below re-issues a request or touches the URL: `GET /v1/animals` accepts no search,
+   * filter, sort or paging parameters (BR6), so the roster already in the browser is the
+   * only thing there is to narrow.
+   */
+  const [term, setTerm] = useState('');
+  const [habitat, setHabitat] = useState<string | null>(null);
+
+  const animals = state.status === 'loaded' ? state.animals : NO_ANIMALS;
+  const habitats = useMemo(() => habitatsInRoster(animals), [animals]);
+  const visibleAnimals = useMemo(
+    () => filterRoster(animals, { term, habitat }),
+    [animals, term, habitat],
+  );
 
   return (
     <div className="flex flex-col gap-6">
@@ -51,13 +78,31 @@ export default function HomePage() {
       )}
 
       {state.status === 'loaded' &&
-        (state.animals.length === 0 ? (
+        (animals.length === 0 ? (
+          // Nothing to narrow, so the controls would be an empty affordance.
           <EmptyState
             title={NO_ANIMALS_TITLE}
             description={NO_ANIMALS_DETAIL}
           />
         ) : (
-          <AnimalRosterTable animals={state.animals} />
+          <>
+            <RosterFilters
+              term={term}
+              onTermChange={setTerm}
+              habitat={habitat}
+              onHabitatChange={setHabitat}
+              habitats={habitats}
+            />
+
+            {visibleAnimals.length === 0 ? (
+              <EmptyState
+                title={NO_MATCHES_TITLE}
+                description={NO_MATCHES_DETAIL}
+              />
+            ) : (
+              <AnimalRosterTable animals={visibleAnimals} />
+            )}
+          </>
         ))}
     </div>
   );
